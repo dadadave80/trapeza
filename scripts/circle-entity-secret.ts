@@ -26,8 +26,7 @@ if (cmd === "generate") {
   if (!apiKey) throw new Error("Missing CIRCLE_API_KEY in env");
   if (!entitySecret) throw new Error("Missing CIRCLE_ENTITY_SECRET in env");
 
-  const res = await generateEntitySecretCiphertext({ apiKey, entitySecret });
-  const ciphertext = res.data?.entitySecretCiphertext;
+  const ciphertext = await generateEntitySecretCiphertext({ apiKey, entitySecret });
   if (!ciphertext) throw new Error("No ciphertext returned");
   console.log(ciphertext);
 } else if (cmd === "register") {
