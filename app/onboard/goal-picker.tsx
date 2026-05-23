@@ -11,9 +11,11 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Goal>(initialGoal ?? "balanced");
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function submit() {
     setCreating(true);
+    setError(null);
     try {
       const res = await fetch("/api/wallet", {
         method: "POST",
@@ -22,13 +24,17 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data?.details || data?.error || "Failed to create wallet");
+        const msg = data?.details || data?.error || `HTTP ${res.status}`;
+        setError(msg);
+        toast.error(msg);
         setCreating(false);
         return;
       }
       router.push("/portfolio");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err));
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+      toast.error(msg);
       setCreating(false);
     }
   }
@@ -66,6 +72,19 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
           );
         })}
       </div>
+
+      {error ? (
+        <div className="rounded-md border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+          <div className="font-medium mb-1">Wallet creation failed</div>
+          <div className="break-words">{error}</div>
+          <div className="mt-2 text-xs opacity-80">
+            Common causes: Supabase schema not applied (check{" "}
+            <code>lib/db/schema.sql</code> ran), Circle wallet-set id wrong, or
+            Arc Testnet rate-limited. Check the Vercel function logs for the
+            full server-side trace.
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-zinc-500">

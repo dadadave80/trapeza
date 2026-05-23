@@ -10,8 +10,17 @@ export async function supabaseServer() {
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll: (toSet) => {
-          for (const { name, value, options } of toSet) {
-            cookieStore.set(name, value, options);
+          // In Next 15+, cookieStore.set() throws when called from a Server
+          // Component (only Route Handlers, Server Actions, and middleware
+          // can set cookies). Silently no-op there — the cookie will be set
+          // by /auth/callback or another route handler that does have write
+          // access. Swallowing this is the standard @supabase/ssr pattern.
+          try {
+            for (const { name, value, options } of toSet) {
+              cookieStore.set(name, value, options);
+            }
+          } catch {
+            // intentionally ignored
           }
         },
       },
