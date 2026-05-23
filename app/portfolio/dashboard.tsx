@@ -1,10 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AllocationBar } from "@/components/allocation-bar";
+import { RegimePill } from "@/components/regime-pill";
 import { goalBands, type Goal, type TargetWeights } from "@/lib/types";
 import type { TokenBalances } from "@/lib/arc/balances";
 
@@ -96,6 +99,14 @@ export function Dashboard({ address, goal, email }: Props) {
   const balances = data?.balances;
   const latest = decisions[0];
 
+  const currentWeights: TargetWeights = balances && balances.total > 0
+    ? {
+        usdc: balances.usdc / balances.total,
+        eurc: balances.eurc / balances.total,
+        cirbtc: balances.cirbtc / balances.total,
+      }
+    : { usdc: 1, eurc: 0, cirbtc: 0 };
+
   async function copyAddress() {
     try {
       await navigator.clipboard.writeText(address);
@@ -127,6 +138,103 @@ export function Dashboard({ address, goal, email }: Props) {
           </div>
         </header>
 
+        {/* Hero strip: allocation + regime */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap items-start justify-between gap-6">
+              <div>
+                <div className="text-xs uppercase tracking-wider text-zinc-500">
+                  Total deposited
+                </div>
+                <div className="text-3xl font-semibold tabular-nums mt-1">
+                  {balances ? `${balances.total.toFixed(2)}` : "—"}
+                  <span className="text-base font-normal text-zinc-500 ml-1.5">
+                    units
+                  </span>
+                </div>
+                <div className="text-xs text-zinc-500 mt-1">
+                  Naive USD-equivalent (1 USDC = 1 EURC = 1 cirBTC unit). cirBTC
+                  USD price pending Phase 4 oracle.
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <RegimePill
+                  regime={latest?.regime ?? "neutral"}
+                  size="lg"
+                />
+                {latest ? (
+                  <span className="text-xs text-zinc-500">
+                    {new Date(latest.created_at).toLocaleString()}
+                  </span>
+                ) : (
+                  <span className="text-xs text-zinc-500">No agent run yet</span>
+                )}
+              </div>
+            </div>
+            <div className="mt-6">
+              <AllocationBar
+                actual={currentWeights}
+                target={latest?.target_weights}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Why this allocation? */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Why this allocation?</CardTitle>
+            <CardDescription>
+              {latest
+                ? `Agent decision from ${new Date(latest.created_at).toLocaleString()}.`
+                : `Click "Run agent now" once you've funded your wallet — Gemini will read the market, decide target weights, and execute the rebalance.`}
+            </CardDescription>
+          </CardHeader>
+          {latest ? (
+            <CardContent className="space-y-4">
+              <p className="text-zinc-800 dark:text-zinc-200 leading-relaxed text-lg">
+                {latest.reasoning}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                {latest.executed ? (
+                  <span className="rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5">
+                    Executed
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 px-2.5 py-0.5">
+                    Plan only
+                  </span>
+                )}
+                {latest.arc_tx_hash ? (
+                  <a
+                    className="underline text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100"
+                    href={`https://testnet.arcscan.app/tx/${latest.arc_tx_hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Swap tx ↗
+                  </a>
+                ) : null}
+                {latest.trace_hash ? (
+                  <span
+                    className="font-mono text-xs text-zinc-500"
+                    title={latest.trace_hash}
+                  >
+                    anchored {latest.trace_hash.slice(0, 12)}…{latest.trace_hash.slice(-6)}
+                  </span>
+                ) : null}
+                <Link
+                  href={`/trace/${latest.id}`}
+                  className="ml-auto text-sm underline text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100"
+                >
+                  Full decision detail →
+                </Link>
+              </div>
+            </CardContent>
+          ) : null}
+        </Card>
+
+        {/* Deposit + balances */}
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
@@ -179,13 +287,12 @@ export function Dashboard({ address, goal, email }: Props) {
             <CardHeader>
               <CardTitle>Balances</CardTitle>
               <CardDescription>
-                Polled every 10 seconds from Arc Testnet (
-                <code className="text-xs">{`chainId 5042002`}</code>).
+                Polled every 10 seconds from Arc Testnet (chainId 5042002).
               </CardDescription>
             </CardHeader>
             <CardContent>
               {error ? (
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                <p className="text-sm text-red-600 dark:text-red-400 mb-3">{error}</p>
               ) : null}
               <div className="divide-y divide-border -mt-2">
                 <BalanceRow
@@ -211,7 +318,7 @@ export function Dashboard({ address, goal, email }: Props) {
                 />
               </div>
               {balances ? (
-                <div className="pt-4 mt-4 border-t text-sm text-zinc-500">
+                <div className="pt-4 mt-4 border-t text-xs text-zinc-500">
                   Last fetched{" "}
                   {new Date(balances.fetched_at).toLocaleTimeString()}.
                 </div>
@@ -220,89 +327,42 @@ export function Dashboard({ address, goal, email }: Props) {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Latest decision</CardTitle>
-            <CardDescription>
-              {latest
-                ? `${new Date(latest.created_at).toLocaleString()} · regime ${latest.regime}`
-                : "No decisions yet. Fund your wallet and click “Run agent now”."}
-            </CardDescription>
-          </CardHeader>
-          {latest ? (
-            <CardContent className="space-y-4">
-              <p className="text-zinc-800 dark:text-zinc-200 leading-relaxed">
-                {latest.reasoning}
-              </p>
-              <div className="grid grid-cols-3 gap-3 text-sm">
-                <Mini label="USDC target" value={pct(latest.target_weights.usdc)} />
-                <Mini label="EURC target" value={pct(latest.target_weights.eurc)} />
-                <Mini label="cirBTC target" value={pct(latest.target_weights.cirbtc)} />
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                {latest.executed ? (
-                  <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5">
-                    Executed
-                  </span>
-                ) : (
-                  <span className="rounded-full bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 px-2.5 py-0.5">
-                    Plan only
-                  </span>
-                )}
-                {latest.arc_tx_hash ? (
-                  <a
-                    className="underline text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100"
-                    href={`https://testnet.arcscan.app/tx/${latest.arc_tx_hash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Swap tx ↗
-                  </a>
-                ) : null}
-                {latest.trace_hash ? (
-                  <span
-                    className="font-mono text-xs text-zinc-500"
-                    title={latest.trace_hash}
-                  >
-                    trace {latest.trace_hash.slice(0, 12)}…{latest.trace_hash.slice(-6)}
-                  </span>
-                ) : null}
-              </div>
-            </CardContent>
-          ) : null}
-        </Card>
-
+        {/* History */}
         {decisions.length > 1 ? (
           <Card>
             <CardHeader>
               <CardTitle>History</CardTitle>
               <CardDescription>
-                Last {Math.min(10, decisions.length - 1)} decisions.
+                {Math.min(10, decisions.length - 1)} prior decisions. Each one is
+                signed, hashed, and pinned onchain.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="divide-y divide-border">
                 {decisions.slice(1, 11).map((d) => (
-                  <li key={d.id} className="py-3 flex flex-wrap gap-3 items-baseline">
-                    <span className="text-xs text-zinc-500 tabular-nums">
-                      {new Date(d.created_at).toLocaleTimeString()}
-                    </span>
-                    <span className="text-xs uppercase tracking-wider text-zinc-500">
-                      {d.regime}
-                    </span>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 min-w-0 line-clamp-2">
-                      {d.reasoning}
-                    </span>
-                    {d.arc_tx_hash ? (
-                      <a
-                        href={`https://testnet.arcscan.app/tx/${d.arc_tx_hash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs underline text-zinc-500"
-                      >
-                        tx ↗
-                      </a>
-                    ) : null}
+                  <li key={d.id}>
+                    <Link
+                      href={`/trace/${d.id}`}
+                      className="flex flex-wrap gap-3 items-baseline py-3 hover:bg-accent/30 -mx-3 px-3 rounded"
+                    >
+                      <span className="text-xs text-zinc-500 tabular-nums shrink-0">
+                        {new Date(d.created_at).toLocaleString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      <RegimePill regime={d.regime} size="sm" />
+                      <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 min-w-0 line-clamp-1">
+                        {d.reasoning}
+                      </span>
+                      {d.executed ? (
+                        <span className="text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                          executed
+                        </span>
+                      ) : null}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -333,7 +393,7 @@ function BalanceRow({
         <div className="font-medium">{symbol}</div>
         <div className="text-xs text-zinc-500">
           {hint}
-          {target !== undefined ? ` · target ${pct(target)}` : ""}
+          {target !== undefined ? ` · target ${(target * 100).toFixed(0)}%` : ""}
         </div>
       </div>
       <div className="text-right font-mono text-sm tabular-nums">
@@ -341,17 +401,4 @@ function BalanceRow({
       </div>
     </div>
   );
-}
-
-function Mini({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border bg-muted/40 px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</div>
-      <div className="text-sm font-medium mt-0.5">{value}</div>
-    </div>
-  );
-}
-
-function pct(n: number): string {
-  return `${(n * 100).toFixed(0)}%`;
 }
