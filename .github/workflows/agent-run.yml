@@ -1,0 +1,42 @@
+name: agent-run
+
+# Vercel Hobby plan only allows DAILY cron. We need every-15-min cadence,
+# so we run the trigger from GitHub Actions instead. The route itself
+# verifies `Authorization: Bearer ${CRON_SECRET}` to keep it private.
+#
+# Required GitHub repo secrets (Settings → Secrets and variables → Actions):
+#   - AGENT_RUN_URL   e.g. https://trapeza.vercel.app/api/agent/run
+#   - CRON_SECRET     same value as the CRON_SECRET env on Vercel
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}        # also allow manual triggers
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-run
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Hit /api/agent/run
+        env:
+          AGENT_RUN_URL: ${{ secrets.AGENT_RUN_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$AGENT_RUN_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "Missing AGENT_RUN_URL or CRON_SECRET secret" >&2
+            exit 1
+          fi
+          # -f makes curl exit non-zero on HTTP >=400; -sS keeps the log clean.
+          curl -fsS -X POST "$AGENT_RUN_URL" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "X-Trigger: github-actions" \
+            --max-time 240 \
+            -w "\nHTTP %{http_code} in %{time_total}s\n"

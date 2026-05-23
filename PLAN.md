@@ -87,15 +87,17 @@ What this plan deliberately does **not** chase: cross-chain (CCTP/Gateway adds a
               └─────────────────┘
                         ▲
                         │
-              ┌─────────┴───────┐
-              │ Vercel Cron     │
-              │ every 15 min    │  ─► triggers /api/agent/run
-              └─────────────────┘
+              ┌──────────────────────┐
+              │ GitHub Actions cron  │  Vercel Hobby caps cron at 1/day, so
+              │ */15 * * * *         │  the schedule lives in GitHub Actions.
+              │ → POST /api/agent/run│  Route checks Authorization: Bearer
+              │   + Bearer secret    │  ${CRON_SECRET}.
+              └──────────────────────┘
 ```
 
 **Data flow per rebalance cycle:**
 
-1. Vercel Cron hits `/api/agent/run` every 15 min.
+1. GitHub Actions scheduled workflow (`.github/workflows/agent-run.yml`) `POST`s `/api/agent/run` every 15 min with `Authorization: Bearer ${CRON_SECRET}`. (Vercel Hobby plan only allows daily cron, so the schedule is offloaded to GitHub Actions.)
 2. Route fetches: market signals (price feeds, volatility), current portfolio state (read via viem against Arc), regime history.
 3. Calls **Gemini 3 Flash** for fast signal classification ("is this a regime-shift candidate?").
 4. If yes, calls **Gemini 3.1 Pro** for the full decision (target weights + reasoning trace).
@@ -121,7 +123,8 @@ What this plan deliberately does **not** chase: cross-chain (CCTP/Gateway adds a
 | Reads | `viem` | `arcTestnet` is **already a built-in chain in viem** (`use-arc.md` best-practice rule) — do NOT call `defineChain`. The current `lib/arc/client.ts` uses `defineChain` and must be switched to `import { arcTestnet } from 'viem/chains'`. |
 | DB | Supabase (Postgres + Realtime) | Free tier, realtime built-in. |
 | LLM | **Google Gemini** via `@google/genai` SDK · `gemini-3-flash` for fast loop, `gemini-3.1-pro` for decision | Free tier on AI Studio; current GA models. |
-| Cron + webhooks | Vercel Cron (`vercel.json`) + Vercel HTTPS endpoint for the Circle webhook | Native, zero infra. |
+| Cron | **GitHub Actions** scheduled workflow at `.github/workflows/agent-run.yml` | Vercel Hobby caps cron to one run/day; GitHub Actions allows `*/15 * * * *` for free and is source-controlled. The workflow `POST`s the public Vercel URL with `Authorization: Bearer ${CRON_SECRET}`. |
+| Webhooks | Vercel HTTPS endpoint for the Circle webhook (`/api/webhooks/circle`) | Native, zero infra. Verifies `X-Circle-Signature`. |
 | Charts | Recharts | Standard, looks fine out of the box. |
 | Hosting | Vercel | One push to deploy. |
 | Arc RPC | `https://rpc.testnet.arc.network` (canonical, from `use-arc.md`). The Canteen-proxied RPC at `rpc.testnet.arc-node.thecanteenapp.com` is available as a fallback. | The canonical Arc RPC is the safer default; the Canteen proxy enforces an allowlist that may exclude methods App Kit needs. |
@@ -172,7 +175,10 @@ trapeza/
 ├── package.json                     ✓ uses bun + Next 16
 ├── bun.lock                         ✓
 ├── next.config.ts                   ✓
-├── vercel.json                      ✓ cron config (add webhook route)
+├── vercel.json                      ✓ schema-only (no cron — see .github/workflows/agent-run.yml)
+├── .github/
+│   └── workflows/
+│       └── agent-run.yml            ✓ GitHub Actions cron, fires /api/agent/run every 15 min
 ├── app/
 │   ├── page.tsx                     ✓ landing — what is Trapeza
 │   ├── onboard/page.tsx             ✓ pick goal + create wallet
@@ -505,17 +511,32 @@ Compile + deploy via Circle SCP (`use-smart-contract-platform.md` Implementation
 
 `use-developer-controlled-wallets.md` is explicit: **prefer webhooks over polling**. Register a public HTTPS endpoint in the Circle Developer Console under Webhooks, verify the `X-Circle-Signature` + `X-Circle-Key-Id` headers on every callback, and update the matching `decisions` row on terminal-state events (`COMPLETE`, `FAILED`, `DENIED`, `CANCELLED`).
 
-#### 3g. Cron (`vercel.json`)
+#### 3g. Cron (`.github/workflows/agent-run.yml`)
 
-```json
-{
-  "crons": [
-    { "path": "/api/agent/run", "schedule": "*/15 * * * *" }
-  ]
-}
+Vercel Hobby allows only daily cron — we need every 15 minutes, so the schedule lives in GitHub Actions:
+
+```yaml
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          AGENT_RUN_URL: ${{ secrets.AGENT_RUN_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -X POST "$AGENT_RUN_URL" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            --max-time 240
 ```
 
-In `/api/agent/run`, iterate over all active users with non-zero balance. Bound execution: skip if `last_rebalance_at` < 10 min ago (`MIN_INTERVAL_SECONDS` in `constants.ts`). Wrap in try/catch per user so one user's failure doesn't kill the loop.
+Set `AGENT_RUN_URL` (e.g. `https://trapeza.vercel.app/api/agent/run`) and `CRON_SECRET` as GitHub Actions secrets (Settings → Secrets and variables → Actions). The same `CRON_SECRET` must exist in Vercel env.
+
+In `/api/agent/run`, verify the bearer token first, then iterate over all active users with non-zero balance. Bound execution: skip if `last_rebalance_at` < 10 min ago (`MIN_INTERVAL_SECONDS` in `constants.ts`). Wrap in try/catch per user so one user's failure doesn't kill the loop.
 
 **Ship gate:**
 - Agent loop runs end-to-end without manual trigger.
@@ -637,7 +658,7 @@ Address the user directly. Be calm, specific, and short.`;
 |---|---|---|
 | `@circle-fin/adapter-circle-wallets` constructor name differs from the example | Medium | Read `node_modules/@circle-fin/adapter-circle-wallets/` once installed; the package exports an adapter factory regardless of name. |
 | `cirBTC` token alias resolution fails through App Kit on Arc Testnet | Medium | Drop cirBTC → reduce to USDC/EURC only and treat the "risk" leg as a higher EURC allocation. Note in README. |
-| Vercel Cron is unreliable on free tier | Low | Vercel Cron is fine on free; still add a manual "Run agent now" button on the dashboard (good for the demo regardless). |
+| GitHub Actions cron drifts (no SLA on free tier) | Medium | GitHub may delay a scheduled run by a few minutes under load. The 15-min cadence absorbs that; if drift exceeds 30 min, switch to `cron-job.org` (free, more reliable) or upgrade Vercel to Pro for native cron. Add a manual "Run agent now" button on the dashboard regardless (good for the demo). |
 | Arc RPC is rate-limited | Medium | Cache balance reads aggressively (10s TTL). Batch via multicall. |
 | Onboarding has friction (faucet delays at `faucet.circle.com`) | High | Pre-fund a "demo mode" wallet you control. Let visitors view a live agent loop without funding. |
 | Circle webhook signature verification fails / no callback | Medium | Fall back to `walletsClient.getTransaction({ id })` polling per 10s on outstanding `circle_tx_id`s. |

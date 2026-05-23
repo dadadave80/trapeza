@@ -29,7 +29,8 @@ Done programmatically:
 - `lib/db/schema.sql` written with renamed columns (`usdc_balance` / `eurc_balance` / `cirbtc_balance`).
 - `lib/db/client.ts` (server SSR client) + `lib/db/browser.ts` (browser client) written.
 - `lib/constants.ts` written with `ARC` accessors, `CIRCLE_ARC_BLOCKCHAIN`, `APPKIT_ARC_CHAIN = "Arc_Testnet"`.
-- `vercel.json` written with cron `*/15 * * * *` → `/api/agent/run`.
+- `vercel.json` written (schema-only; no cron — Vercel Hobby caps cron to one run/day, so the `*/15` schedule moved to `.github/workflows/agent-run.yml`).
+- `.github/workflows/agent-run.yml` written — GitHub Actions scheduled workflow `POST`s `/api/agent/run` every 15 min with `Authorization: Bearer ${CRON_SECRET}`.
 - `contracts/TraceAnchor.sol` preserved (compiled separately; remember `evmVersion: "paris"`).
 - `scripts/circle-entity-secret.ts` preserved.
 - `scripts/create-wallet-set.ts` written (one-off helper).
@@ -78,6 +79,13 @@ These need real accounts / browser flows I can't drive:
    bunx vercel env pull .env.local         # if you've added vars in Vercel dashboard
    bunx vercel --prod
    ```
+
+   After the first prod deploy, set the GitHub repo secrets that the cron workflow needs (Settings → Secrets and variables → Actions):
+
+   - `AGENT_RUN_URL` — your production Vercel URL + `/api/agent/run` (e.g. `https://trapeza.vercel.app/api/agent/run`)
+   - `CRON_SECRET` — same long random string as the Vercel env `CRON_SECRET`
+
+   Verify it works manually: GitHub repo → Actions tab → "agent-run" workflow → "Run workflow" button. (It'll only fire automatically after the first push reaches `main` on GitHub.)
 
 7. **Deploy `TraceAnchor.sol` via Circle SCP** (covered by PLAN.md Phase 3 — defer until then). When you do, **compile with `evmVersion: "paris"`** to avoid PUSH0.
 
