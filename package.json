@@ -10,7 +10,8 @@
     "entity-secret:generate": "bun scripts/circle-entity-secret.ts generate",
     "entity-secret:ciphertext": "bun scripts/circle-entity-secret.ts ciphertext",
     "entity-secret:register": "bun scripts/circle-entity-secret.ts register",
-    "create-wallet-set": "bun scripts/create-wallet-set.ts"
+    "create-wallet-set": "bun scripts/create-wallet-set.ts",
+    "deploy-anchor": "bun scripts/deploy-trace-anchor.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -44,6 +45,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "solc": "^0.8.35",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

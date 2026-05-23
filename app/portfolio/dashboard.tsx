@@ -5,7 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { goalBands, type Goal } from "@/lib/types";
+import { goalBands, type Goal, type TargetWeights } from "@/lib/types";
 import type { TokenBalances } from "@/lib/arc/balances";
 
 type Props = {
@@ -21,20 +21,43 @@ type PortfolioResponse = {
   balances: TokenBalances;
 };
 
+type DecisionRow = {
+  id: string;
+  created_at: string;
+  regime: string;
+  target_weights: TargetWeights;
+  prev_weights: TargetWeights | null;
+  reasoning: string;
+  alerts: string[];
+  trace_hash: string | null;
+  arc_tx_hash: string | null;
+  circle_tx_id: string | null;
+  executed: boolean;
+};
+
 export function Dashboard({ address, goal, email }: Props) {
   const [data, setData] = useState<PortfolioResponse | null>(null);
+  const [decisions, setDecisions] = useState<DecisionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [running, setRunning] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/portfolio", { cache: "no-store" });
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.details || body?.error || `HTTP ${res.status}`);
+      const [p, t] = await Promise.all([
+        fetch("/api/portfolio", { cache: "no-store" }),
+        fetch("/api/trace", { cache: "no-store" }),
+      ]);
+      if (!p.ok) {
+        const body = await p.json().catch(() => null);
+        throw new Error(body?.details || body?.error || `HTTP ${p.status}`);
       }
-      const json = (await res.json()) as PortfolioResponse;
+      const json = (await p.json()) as PortfolioResponse;
       setData(json);
+      if (t.ok) {
+        const tj = (await t.json()) as { decisions: DecisionRow[] };
+        setDecisions(tj.decisions ?? []);
+      }
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -49,8 +72,29 @@ export function Dashboard({ address, goal, email }: Props) {
     return () => clearInterval(t);
   }, [refresh]);
 
+  async function runAgent() {
+    setRunning(true);
+    try {
+      const res = await fetch("/api/agent/trigger", { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) {
+        toast.error(body?.details || body?.error || `HTTP ${res.status}`);
+      } else if (body?.result?.skipped) {
+        toast.message(`Agent: ${body.result.skipped}`);
+      } else {
+        toast.success("Agent ran. Refreshing…");
+      }
+      await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setRunning(false);
+    }
+  }
+
   const band = goalBands[goal];
   const balances = data?.balances;
+  const latest = decisions[0];
 
   async function copyAddress() {
     try {
@@ -73,9 +117,14 @@ export function Dashboard({ address, goal, email }: Props) {
               Your portfolio
             </h1>
           </div>
-          <Button variant="outline" onClick={refresh} disabled={loading}>
-            {loading ? "Refreshing…" : "Refresh"}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={refresh} disabled={loading}>
+              {loading ? "Refreshing…" : "Refresh"}
+            </Button>
+            <Button onClick={runAgent} disabled={running}>
+              {running ? "Running agent…" : "Run agent now"}
+            </Button>
+          </div>
         </header>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -143,18 +192,21 @@ export function Dashboard({ address, goal, email }: Props) {
                   symbol="USDC"
                   amount={balances?.usdc}
                   hint="cash · native gas"
+                  target={latest?.target_weights.usdc}
                   loading={loading && !balances}
                 />
                 <BalanceRow
                   symbol="EURC"
                   amount={balances?.eurc}
                   hint="safe-FX"
+                  target={latest?.target_weights.eurc}
                   loading={loading && !balances}
                 />
                 <BalanceRow
                   symbol="cirBTC"
                   amount={balances?.cirbtc}
                   hint="risk"
+                  target={latest?.target_weights.cirbtc}
                   loading={loading && !balances}
                 />
               </div>
@@ -170,19 +222,93 @@ export function Dashboard({ address, goal, email }: Props) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Agent</CardTitle>
+            <CardTitle>Latest decision</CardTitle>
             <CardDescription>
-              The agent runs every 15 min (GitHub Actions cron → /api/agent/run).
-              Decisions, reasoning traces, and onchain anchor txns will land
-              here once Phase 3 is wired up.
+              {latest
+                ? `${new Date(latest.created_at).toLocaleString()} · regime ${latest.regime}`
+                : "No decisions yet. Fund your wallet and click “Run agent now”."}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-zinc-500">
-              No decisions yet. Fund your wallet to start the loop.
-            </p>
-          </CardContent>
+          {latest ? (
+            <CardContent className="space-y-4">
+              <p className="text-zinc-800 dark:text-zinc-200 leading-relaxed">
+                {latest.reasoning}
+              </p>
+              <div className="grid grid-cols-3 gap-3 text-sm">
+                <Mini label="USDC target" value={pct(latest.target_weights.usdc)} />
+                <Mini label="EURC target" value={pct(latest.target_weights.eurc)} />
+                <Mini label="cirBTC target" value={pct(latest.target_weights.cirbtc)} />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                {latest.executed ? (
+                  <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5">
+                    Executed
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 px-2.5 py-0.5">
+                    Plan only
+                  </span>
+                )}
+                {latest.arc_tx_hash ? (
+                  <a
+                    className="underline text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100"
+                    href={`https://testnet.arcscan.app/tx/${latest.arc_tx_hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Swap tx ↗
+                  </a>
+                ) : null}
+                {latest.trace_hash ? (
+                  <span
+                    className="font-mono text-xs text-zinc-500"
+                    title={latest.trace_hash}
+                  >
+                    trace {latest.trace_hash.slice(0, 12)}…{latest.trace_hash.slice(-6)}
+                  </span>
+                ) : null}
+              </div>
+            </CardContent>
+          ) : null}
         </Card>
+
+        {decisions.length > 1 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>History</CardTitle>
+              <CardDescription>
+                Last {Math.min(10, decisions.length - 1)} decisions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="divide-y divide-border">
+                {decisions.slice(1, 11).map((d) => (
+                  <li key={d.id} className="py-3 flex flex-wrap gap-3 items-baseline">
+                    <span className="text-xs text-zinc-500 tabular-nums">
+                      {new Date(d.created_at).toLocaleTimeString()}
+                    </span>
+                    <span className="text-xs uppercase tracking-wider text-zinc-500">
+                      {d.regime}
+                    </span>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 min-w-0 line-clamp-2">
+                      {d.reasoning}
+                    </span>
+                    {d.arc_tx_hash ? (
+                      <a
+                        href={`https://testnet.arcscan.app/tx/${d.arc_tx_hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs underline text-zinc-500"
+                      >
+                        tx ↗
+                      </a>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </div>
   );
@@ -192,22 +318,40 @@ function BalanceRow({
   symbol,
   amount,
   hint,
+  target,
   loading,
 }: {
   symbol: string;
   amount: number | undefined;
   hint: string;
+  target?: number;
   loading: boolean;
 }) {
   return (
     <div className="flex items-center justify-between py-3">
       <div>
         <div className="font-medium">{symbol}</div>
-        <div className="text-xs text-zinc-500">{hint}</div>
+        <div className="text-xs text-zinc-500">
+          {hint}
+          {target !== undefined ? ` · target ${pct(target)}` : ""}
+        </div>
       </div>
       <div className="text-right font-mono text-sm tabular-nums">
         {loading ? "…" : amount !== undefined ? amount.toFixed(4) : "—"}
       </div>
     </div>
   );
+}
+
+function Mini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border bg-muted/40 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</div>
+      <div className="text-sm font-medium mt-0.5">{value}</div>
+    </div>
+  );
+}
+
+function pct(n: number): string {
+  return `${(n * 100).toFixed(0)}%`;
 }
