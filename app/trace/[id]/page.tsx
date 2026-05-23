@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { supabaseServer } from "@/lib/db/client";
+import { supabaseServer, supabaseService } from "@/lib/db/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AllocationBar } from "@/components/allocation-bar";
 import { RegimePill } from "@/components/regime-pill";
@@ -30,13 +30,16 @@ export default async function TracePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await supabaseServer();
+  const sb = await supabaseServer();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await sb.auth.getUser();
   if (!user) redirect("/onboard");
 
-  const { data: d } = await supabase
+  // Service role for the read; user.id-scoped so the user can only see
+  // their own decisions even with the bypass.
+  const svc = supabaseService();
+  const { data: d } = await svc
     .from("decisions")
     .select("*")
     .eq("id", id)

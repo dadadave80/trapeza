@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { supabaseServer } from "@/lib/db/client";
+import { supabaseServer, supabaseService } from "@/lib/db/client";
 import { EmailForm } from "./email-form";
 import { GoalPicker } from "./goal-picker";
 
@@ -10,10 +10,10 @@ export default async function OnboardPage({
 }: {
   searchParams: Promise<{ error?: string; sent?: string }>;
 }) {
-  const supabase = await supabaseServer();
+  const sb = await supabaseServer();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await sb.auth.getUser();
 
   const params = await searchParams;
 
@@ -43,7 +43,10 @@ export default async function OnboardPage({
   }
 
   // Authed. If a wallet already exists, send them to the dashboard.
-  const { data: row } = await supabase
+  // Use service role for the read (anon-with-session is blocked by RLS when
+  // it's enabled on public.users).
+  const svc = supabaseService();
+  const { data: row } = await svc
     .from("users")
     .select("arc_address, goal")
     .eq("id", user.id)

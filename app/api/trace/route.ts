@@ -1,20 +1,22 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/db/client";
+import { supabaseServer, supabaseService } from "@/lib/db/client";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const supabase = await supabaseServer();
+  const sb = await supabaseServer();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  // Service role for the read (RLS may be on public.decisions).
+  const svc = supabaseService();
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
 
   if (id) {
-    const { data: row } = await supabase
+    const { data: row } = await svc
       .from("decisions")
       .select("*")
       .eq("user_id", user.id)
@@ -24,7 +26,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ decision: row });
   }
 
-  const { data: rows } = await supabase
+  const { data: rows } = await svc
     .from("decisions")
     .select(
       "id, created_at, regime, target_weights, prev_weights, reasoning, alerts, trace_hash, arc_tx_hash, circle_tx_id, executed",
