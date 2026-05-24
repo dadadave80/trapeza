@@ -20,7 +20,11 @@ create table if not exists portfolios (
   usdc_balance numeric default 0,
   eurc_balance numeric default 0,
   cirbtc_balance numeric default 0,
+  -- last_rebalance_at: last decision that actually executed at least one swap
   last_rebalance_at timestamptz,
+  -- last_checked_at: most recent agent tick, even when it did nothing
+  -- (cron visibility — lets the dashboard show "agent woke up 4 min ago")
+  last_checked_at timestamptz,
   updated_at timestamptz default now()
 );
 
@@ -34,7 +38,13 @@ create table if not exists decisions (
   reasoning text,
   alerts jsonb default '[]'::jsonb,
   trace_hash text,
+  -- arc_tx_hash kept for backwards compat (= first executed swap), but
+  -- arc_tx_hashes carries the full list so partial-success cases are visible
   arc_tx_hash text,
+  arc_tx_hashes jsonb default '[]'::jsonb,
+  -- partial = some legs executed, some failed. UI surfaces this differently
+  -- from a clean "all executed" or "plan only" decision.
+  partial boolean default false,
   circle_tx_id text,                -- developer-controlled-wallets transaction id
   executed boolean default false,
   created_at timestamptz default now()

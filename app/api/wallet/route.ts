@@ -35,9 +35,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  // 1. Auth: must use the session-authed client (anon key + cookies) to
-  //    identify the user. We then switch to service-role for writes so RLS
-  //    on the public.users table can't silently block us.
+  // 1. Auth: session-authed client identifies the user; service-role
+  //    handles writes so RLS on public.users can't silently block us.
   const sb = await supabaseServer();
   const {
     data: { user },
@@ -59,7 +58,6 @@ export async function POST(req: Request) {
 
   const svc = supabaseService();
 
-  // 2. Upsert the user row (service role bypasses RLS).
   const upsertRes = await svc.from("users").upsert({
     id: user.id,
     email: user.email ?? null,
@@ -78,7 +76,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // 3. If a wallet already exists, return it without re-minting.
   const { data: existing, error: readErr } = await svc
     .from("users")
     .select("circle_wallet_id, arc_address")
@@ -99,7 +96,6 @@ export async function POST(req: Request) {
     });
   }
 
-  // 4. Mint via Circle.
   let wallet;
   try {
     wallet = await createUserWallet(user.id);
@@ -111,7 +107,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // 5. Persist wallet info on the user row, seed an empty portfolio row.
   const { error: writeErr } = await svc
     .from("users")
     .update({ circle_wallet_id: wallet.id, arc_address: wallet.address })
@@ -136,4 +131,38 @@ export async function POST(req: Request) {
     walletId: wallet.id,
     created: true,
   });
+}
+
+// PATCH /api/wallet — change the user's goal/mandate. The wallet stays
+// the same; the agent simply re-targets to the new bands on its next run.
+export async function PATCH(req: Request) {
+  const sb = await supabaseServer();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const body = await req.json().catch(() => null);
+  const parsed = bodySchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "invalid body", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const svc = supabaseService();
+  const { error } = await svc
+    .from("users")
+    .update({ goal: parsed.data.goal })
+    .eq("id", user.id);
+
+  if (error) {
+    return NextResponse.json(
+      { error: "db write failed", details: error.message },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({ ok: true, goal: parsed.data.goal });
 }

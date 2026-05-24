@@ -59,7 +59,7 @@ export default async function TracePage({
     <div className="flex-1">
       <Masthead
         right={
-          <Link href="/portfolio" className="hover:underline">
+          <Link href="/portfolio" className="hover:underline whitespace-nowrap">
             ← Portfolio
           </Link>
         }

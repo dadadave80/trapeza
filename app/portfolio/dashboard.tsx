@@ -119,17 +119,9 @@ export function Dashboard({ address, goal, email }: Props) {
   return (
     <div className="flex-1">
       <Masthead
-        right={
-          <>
-            <span className="hidden md:inline opacity-60">{email}</span>
-            <span className="border-l border-black pl-4 hidden md:inline">
-              Mandate / {band.label}
-            </span>
-            <span className="border-l border-black pl-4 hidden lg:inline">
-              Arc Testnet ▶ 5042002
-            </span>
-          </>
-        }
+        email={email}
+        mandate={goal}
+        right={<span className="opacity-60 whitespace-nowrap">Arc · 5042002</span>}
       />
 
       {/* ─── HERO ───────────────────────────────────────────────────── */}
