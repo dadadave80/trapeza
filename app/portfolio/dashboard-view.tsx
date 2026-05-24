@@ -572,7 +572,7 @@ function PositionsTable({
           >
             <div className="px-4 py-4">
               <div className="text-lg font-bold tracking-tight">{r.symbol}</div>
-              <div className="label-sm text-[color:var(--muted)]">{r.hint}</div>
+              <div className="label-sm text-[color:var(--ink-muted)]">{r.hint}</div>
             </div>
             <div className="px-4 py-4 border-l border-black text-right ledger text-sm tabular-nums">
               {loading ? "…" : r.amount !== undefined ? r.amount.toLocaleString(undefined, { maximumFractionDigits: 6 }) : "—"}
@@ -594,7 +594,7 @@ function PositionsTable({
             <div className="flex items-baseline justify-between gap-3">
               <div>
                 <div className="text-lg font-bold tracking-tight">{r.symbol}</div>
-                <div className="label-sm text-[color:var(--muted)]">{r.hint}</div>
+                <div className="label-sm text-[color:var(--ink-muted)]">{r.hint}</div>
               </div>
               <div className="text-right">
                 <div className="text-base font-bold tabular-nums">
