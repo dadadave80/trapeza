@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ARC_DISPLAY } from "@/lib/constants";
 
 export default function Home() {
   return (
@@ -11,10 +12,10 @@ export default function Home() {
             <span className="ml-2 hidden sm:inline opacity-60">▍ Treasury OS</span>
           </div>
           <div className="col-span-3 border-r border-black py-3 label hidden sm:flex items-center">
-            v0.4.0 / Arc Testnet
+            v0.4.0 / {ARC_DISPLAY.name}
           </div>
           <div className="col-span-3 border-r border-black py-3 label hidden md:flex items-center">
-            5042002 / USDC-native gas
+            {ARC_DISPLAY.chainId} / USDC-native gas
           </div>
           <div className="col-span-3 py-3 flex items-center justify-end label">
             <Link href="/onboard" className="hover:underline">

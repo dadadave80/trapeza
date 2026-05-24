@@ -9,6 +9,7 @@ import { RegimePill, RegimeLockup } from "@/components/regime-pill";
 import { Masthead } from "@/components/masthead";
 import { goalBands, type Goal, type TargetWeights } from "@/lib/types";
 import type { TokenBalances } from "@/lib/arc/balances";
+import { ARC_DISPLAY } from "@/lib/constants";
 
 type Props = {
   address: `0x${string}`;
@@ -121,7 +122,7 @@ export function Dashboard({ address, goal, email }: Props) {
       <Masthead
         email={email}
         mandate={goal}
-        right={<span className="opacity-60 whitespace-nowrap">Arc · 5042002</span>}
+        right={<span className="opacity-60 whitespace-nowrap">Arc · {ARC_DISPLAY.chainId}</span>}
       />
 
       {/* ─── HERO ───────────────────────────────────────────────────── */}
@@ -419,7 +420,7 @@ export function Dashboard({ address, goal, email }: Props) {
       {/* ─── FOOTER ─────────────────────────────────────────────────── */}
       <footer>
         <div className="mx-auto max-w-[1280px] px-6 py-4 flex flex-wrap items-baseline justify-between gap-3 label">
-          <span>Trapeza ▍ Treasury OS ▍ Arc Testnet · chainId 5042002</span>
+          <span>Trapeza ▍ Treasury OS ▍ {ARC_DISPLAY.name} · chainId {ARC_DISPLAY.chainId}</span>
           <span className="opacity-60">Cron · every 15 min · GitHub Actions</span>
         </div>
       </footer>

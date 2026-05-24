@@ -5,6 +5,7 @@ import { AllocationBar } from "@/components/allocation-bar";
 import { RegimePill } from "@/components/regime-pill";
 import { Masthead } from "@/components/masthead";
 import type { Signals, TargetWeights } from "@/lib/types";
+import { ARC_DISPLAY } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -192,7 +193,7 @@ export default async function TracePage({
 
       <footer>
         <div className="mx-auto max-w-[1280px] px-6 py-4 flex flex-wrap items-baseline justify-between gap-3 label">
-          <span>Trapeza ▍ Treasury OS ▍ Arc Testnet · chainId 5042002</span>
+          <span>Trapeza ▍ Treasury OS ▍ {ARC_DISPLAY.name} · chainId {ARC_DISPLAY.chainId}</span>
           <Link href="/portfolio" className="hover:underline">
             ← Back to portfolio
           </Link>

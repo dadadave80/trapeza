@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer, supabaseService } from "@/lib/db/client";
 import { EmailForm } from "./email-form";
 import { GoalPicker } from "./goal-picker";
+import { ARC_DISPLAY } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function OnboardPage({
             <span className="ml-2 hidden sm:inline opacity-60">▍ Treasury OS</span>
           </Link>
           <div className="col-span-8 sm:col-span-9 py-3 flex items-center justify-end label">
-            Arc Testnet ▶ 5042002
+            {ARC_DISPLAY.name} ▶ {ARC_DISPLAY.chainId}
           </div>
         </div>
       </header>

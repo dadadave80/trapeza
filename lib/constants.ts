@@ -11,6 +11,15 @@ function optionalEnv(key: string): string | undefined {
   return process.env[key];
 }
 
+// Non-throwing display constants — safe in client components, footers, etc.
+// Use ARC.* getters when you actually need the runtime-validated values.
+export const ARC_DISPLAY = {
+  chainId: 5042002,
+  chainIdHex: "0x4CEF52",
+  name: "Arc Testnet",
+  explorerUrl: "https://testnet.arcscan.app",
+} as const;
+
 export const ARC = {
   rpcUrl: () => env("ARC_RPC_URL", "https://rpc.testnet.arc.network"),
   chainId: () => Number(env("ARC_CHAIN_ID", "5042002")),

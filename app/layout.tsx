@@ -37,7 +37,17 @@ export default function RootLayout({
           toastOptions={{
             classNames: {
               toast:
-                "!rounded-none !border-2 !border-black !bg-white !text-black !font-sans !uppercase !tracking-[0.15em] !text-[11px] !font-bold",
+                "!rounded-none !border-2 !border-black !bg-white !text-black !font-sans !uppercase !tracking-[0.15em] !text-[11px] !font-bold !shadow-none !p-4",
+              title: "!text-black !font-bold",
+              description: "!text-black/70 !normal-case !tracking-normal !text-[11px] !font-normal !mt-1",
+              actionButton:
+                "!rounded-none !bg-black !text-white !border-0 !font-bold !uppercase !tracking-[0.15em] !text-[10px]",
+              cancelButton:
+                "!rounded-none !bg-white !text-black !border-2 !border-black !font-bold !uppercase !tracking-[0.15em] !text-[10px]",
+              closeButton:
+                "!rounded-none !border-2 !border-black !bg-white !text-black hover:!bg-black hover:!text-white !transition-colors",
+              error: "!bg-[#FF0044] !text-white !border-black",
+              success: "!bg-[#00FF66] !text-black !border-black",
             },
           }}
         />

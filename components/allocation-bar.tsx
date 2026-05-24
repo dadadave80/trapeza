@@ -4,15 +4,19 @@ const TOKENS = ["usdc", "eurc", "cirbtc"] as const;
 const LABEL = { usdc: "USDC", eurc: "EURC", cirbtc: "cirBTC" } as const;
 const HINT = { usdc: "cash · gas", eurc: "safe-FX", cirbtc: "risk" } as const;
 
-const FILL_BG = {
-  usdc: "#000000",
-  eurc: "#000000",
-  cirbtc: "#00FF66",
+// Per-token fill color + whether that fill is "dark" (label needs white).
+const FILL = {
+  usdc: { bg: "#000000", labelOnFill: "#FFFFFF" },
+  eurc: { bg: "#000000", labelOnFill: "#FFFFFF" },
+  cirbtc: { bg: "#00FF66", labelOnFill: "#000000" },
 } as const;
 
 // Brutalist allocation visual. A row per token, each with a hard-bordered
 // bar showing actual fill, a 2px target marker, and tabular numerals on
 // either side. The bar gets out of the way of the numbers.
+//
+// Label color is explicit (white on dark fill, black on acid fill) — the
+// earlier mix-blend-mode trick produced unreadable gray-on-green.
 export function AllocationBar({
   actual,
   target,
@@ -28,6 +32,12 @@ export function AllocationBar({
       {TOKENS.map((k) => {
         const actualPct = a[k];
         const targetPct = t?.[k];
+        const fill = FILL[k];
+        // Whether the actual fill extends past the label position. If so the
+        // label sits on the fill (white/black per fill); otherwise it sits
+        // on white paper and stays black.
+        const labelStart = Math.min(actualPct, 0.9);
+        const labelOnFill = actualPct >= labelStart + 0.02; // label sits inside fill
         return (
           <div
             key={k}
@@ -40,7 +50,7 @@ export function AllocationBar({
             <div className="relative h-9 border-2 border-black bg-white">
               {targetPct !== undefined ? (
                 <div
-                  className="absolute top-[-12px] bottom-[-12px] w-[2px] bg-black"
+                  className="absolute top-[-12px] bottom-[-12px] w-[2px] bg-black z-10"
                   style={{ left: `${targetPct * 100}%` }}
                 >
                   <div className="absolute -top-1 left-1/2 -translate-x-1/2 label-sm whitespace-nowrap">
@@ -52,17 +62,15 @@ export function AllocationBar({
                 className="absolute top-0 bottom-0 left-0"
                 style={{
                   width: `${Math.max(0, Math.min(1, actualPct)) * 100}%`,
-                  background: FILL_BG[k],
+                  background: fill.bg,
                 }}
               />
               <div
                 className="absolute top-1/2 -translate-y-1/2 label-sm pointer-events-none"
                 style={{
-                  left: `${Math.min(actualPct, 0.92) * 100}%`,
+                  left: `${labelStart * 100}%`,
                   marginLeft: "6px",
-                  color: k === "cirbtc" && actualPct > 0.08 ? "#000" : "#000",
-                  mixBlendMode: "difference",
-                  filter: "invert(1)",
+                  color: labelOnFill ? fill.labelOnFill : "#000",
                 }}
               >
                 {(actualPct * 100).toFixed(0)}%
