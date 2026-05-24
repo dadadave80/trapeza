@@ -2,28 +2,29 @@ import { formatUnits } from "viem";
 import { publicArc } from "./client";
 import { erc20Abi } from "./abi/erc20";
 import { ARC, USDC_DECIMALS, EURC_DECIMALS, CIRBTC_DECIMALS } from "@/lib/constants";
-import { getCirBtcUsdPrice } from "@/lib/agent/pricing";
+import { getPrices, type PriceSource } from "@/lib/agent/pricing";
 
 export type TokenBalances = {
   // Raw token unit amounts (human-readable, e.g. 12.345 USDC, 0.001 cirBTC).
   usdc: number;
   eurc: number;
   cirbtc: number;
-  // USD price per token unit (USDC=1, EURC=1 (hackathon-grade), cirBTC=oracle).
+  // USD price per token unit (USDC=1, EURC=oracle, cirBTC=oracle).
   prices: { usdc: number; eurc: number; cirbtc: number };
   // USD value per token (= units × price).
   totals_usd: { usdc: number; eurc: number; cirbtc: number };
-  // Total portfolio value in USD-equivalent. This is what `total` means now —
-  // weight math and rebalance thresholds depend on it.
+  // Total portfolio value in USD-equivalent. Weight math and rebalance
+  // thresholds depend on this.
   total: number;
-  // Price source for the cirBTC leg (coingecko | cache | fallback).
-  cirbtc_price_source: "coingecko" | "cache" | "fallback";
+  // Price provenance — same source applies to both EURC and cirBTC since
+  // they come from the same CoinGecko batch call.
+  price_source: PriceSource;
   fetched_at: string;
 };
 
-// Read all three ERC-20 balances in parallel, multiply by USD prices,
-// and return both unit amounts and USD totals. The agent's weight math
-// uses `totals_usd`; the dashboard shows both for transparency.
+// Read all three ERC-20 balances in parallel + EURC/cirBTC USD prices,
+// multiply, return both unit amounts and USD totals. The agent's weight
+// math uses `totals_usd`; the dashboard shows both for transparency.
 export async function readBalances(address: `0x${string}`): Promise<TokenBalances> {
   const client = publicArc();
   const usdcAddr = ARC.usdc();
@@ -57,17 +58,17 @@ export async function readBalances(address: `0x${string}`): Promise<TokenBalance
     balanceCalls.push(Promise.resolve(0n));
   }
 
-  // Balances + cirBTC price in parallel.
-  const [[usdcRaw, eurcRaw, cirbtcRaw], cirBtcPriceRes] = await Promise.all([
+  // Balances + prices in parallel.
+  const [[usdcRaw, eurcRaw, cirbtcRaw], priceRes] = await Promise.all([
     Promise.all(balanceCalls),
-    getCirBtcUsdPrice(),
+    getPrices(),
   ]);
 
   const usdc = Number(formatUnits(usdcRaw, USDC_DECIMALS));
   const eurc = Number(formatUnits(eurcRaw, EURC_DECIMALS));
   const cirbtc = Number(formatUnits(cirbtcRaw, CIRBTC_DECIMALS));
 
-  const prices = { usdc: 1, eurc: 1, cirbtc: cirBtcPriceRes.usd };
+  const prices = { usdc: 1, eurc: priceRes.eurc, cirbtc: priceRes.cirbtc };
   const totals_usd = {
     usdc: usdc * prices.usdc,
     eurc: eurc * prices.eurc,
@@ -82,7 +83,7 @@ export async function readBalances(address: `0x${string}`): Promise<TokenBalance
     prices,
     totals_usd,
     total,
-    cirbtc_price_source: cirBtcPriceRes.source,
+    price_source: priceRes.source,
     fetched_at: new Date().toISOString(),
   };
 }

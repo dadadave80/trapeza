@@ -160,7 +160,8 @@ export function Dashboard({ address, goal, email }: Props) {
                     {balances.prices.cirbtc.toLocaleString(undefined, {
                       maximumFractionDigits: 0,
                     })}{" "}
-                    · source {balances.cirbtc_price_source}
+                    · EURC ${balances.prices.eurc.toFixed(3)} · source{" "}
+                    {balances.price_source}
                   </div>
                 ) : null}
               </div>
