@@ -6,7 +6,7 @@ import { ARC_DISPLAY } from "@/lib/constants";
 // server figures out whether to render the unauthed or authed view.
 export default function OnboardLoading() {
   return (
-    <div className="flex-1 flex flex-col bg-white text-black">
+    <div className="flex-1 flex flex-col">
       <header className="border-b-2 border-black">
         <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
           <Link

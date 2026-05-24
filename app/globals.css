@@ -52,7 +52,11 @@
 }
 
 :root {
-  --paper: #ffffff;
+  /* Warm light grey "paper" instead of pure white — reads as a cured
+   * agora wax-tablet rather than a sterile screen. The acid + black still
+   * sing against it. The reactive grain canvas overlays on top of this. */
+  --paper: #ededea;
+  --paper-soft: #f5f4f1;   /* used by elevated surfaces (cards) */
   --ink: #000000;
   --acid: #00ff66;
   --acid-soft: #c4ffd9;
@@ -61,7 +65,7 @@
   --yellow: #ffee00;
   --yellow-soft: #fff6a3;
   --muted: #6a6a6a;
-  --muted-soft: #ededed;
+  --muted-soft: #e2e1de;
 
   --background: var(--paper);
   --foreground: var(--ink);
@@ -100,8 +104,9 @@
 }
 
 .dark {
-  /* Same palette inverted — black paper, white ink, same acid accent. */
-  --paper: #000000;
+  /* Same palette inverted — near-black warm ink, white type, same acid accent. */
+  --paper: #0e0e0c;
+  --paper-soft: #16161a;
   --ink: #ffffff;
   --acid: #00ff66;
   --acid-soft: #003314;
