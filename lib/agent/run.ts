@@ -94,6 +94,7 @@ export async function runForUser(u: UserCtx, opts: RunOptions = {}) {
       walletId: u.circle_wallet_id,
       walletAddress: u.arc_address,
       legs: plan.legs,
+      balances,
     });
     swaps = res.swaps;
     executed = res.executed;

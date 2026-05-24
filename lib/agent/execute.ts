@@ -13,12 +13,23 @@ const SYMBOL: Record<AssetKey, TokenSymbol> = {
   cirbtc: "cirBTC",
 };
 
-export type Leg = { token: AssetKey; deltaUnits: number };
+// Decimals for human-readable amountIn strings. cirBTC has more precision.
+const TOKEN_DECIMALS: Record<AssetKey, number> = {
+  usdc: 6,
+  eurc: 6,
+  cirbtc: 8,
+};
+
+// Delta is denominated in USD now (was raw token units before — wrong for
+// cirBTC at $60k+/unit). Conversion to per-token amountIn happens at swap
+// time via the token's USD price snapshot from TokenBalances.
+export type Leg = { token: AssetKey; deltaUsd: number };
 
 export type SwapAttempt = {
   from: AssetKey;
   to: AssetKey;
   amountIn: string;
+  amountUsd: number;
   txHash?: string;
   amountOut?: string;
   error?: string;
@@ -47,18 +58,16 @@ function adapter() {
   return _adapter;
 }
 
-// Plan the swap legs to reach `target` weights from `current` balances.
-// For hackathon-grade simplicity we treat 1 USDC ≈ 1 EURC ≈ 1 cirBTC in
-// "unit" terms; the agent demonstrates the rebalance loop, not perfect
-// USD-equivalent accounting. (TODO: price cirBTC via kit.estimateSwap.)
+// Plan the swap legs to reach `target` weights from `current` USD-priced
+// balances. Drift is measured in USD as a fraction of total USD value.
 export function planRebalance(
   current: TokenBalances,
   target: TargetWeights,
 ): { legs: Leg[]; willRebalance: boolean; total: number } {
-  const total = current.total;
+  const total = current.total; // USD-equivalent total
   if (total <= 0) return { legs: [], willRebalance: false, total };
 
-  const desired: Record<AssetKey, number> = {
+  const desired_usd: Record<AssetKey, number> = {
     usdc: target.usdc * total,
     eurc: target.eurc * total,
     cirbtc: target.cirbtc * total,
@@ -66,51 +75,66 @@ export function planRebalance(
 
   const legs: Leg[] = (["usdc", "eurc", "cirbtc"] as const).map((t) => ({
     token: t,
-    deltaUnits: desired[t] - current[t],
+    deltaUsd: desired_usd[t] - current.totals_usd[t],
   }));
 
-  const maxDrift = Math.max(...legs.map((l) => Math.abs(l.deltaUnits) / total));
+  const maxDrift = Math.max(...legs.map((l) => Math.abs(l.deltaUsd) / total));
   return { legs, willRebalance: maxDrift > REBALANCE_THRESHOLD, total };
 }
 
-// Execute the rebalance by routing each negative-delta leg into the largest
-// positive-delta leg. For a 3-asset basket this is at most 2 swaps.
+// Route each negative-delta leg into the largest positive-delta sink. For a
+// 3-asset basket this collapses to at most 2 swaps. `amountIn` is the
+// human-readable amount in tokenIn units, computed by converting USD delta
+// → tokenIn units via the price snapshot on `balances`.
 export async function executeRebalance(args: {
   walletId: string;
   walletAddress: `0x${string}`;
   legs: Leg[];
+  balances: TokenBalances;
 }): Promise<ExecutionResult> {
   const kitKey = process.env.KIT_KEY;
   if (!kitKey) {
-    return {
-      swaps: [],
-      executed: false,
-    };
+    return { swaps: [], executed: false };
   }
 
+  // Skip negligible deltas (< $0.50 either way) — not worth the gas.
+  const MIN_USD = 0.5;
   const sources = args.legs
-    .filter((l) => l.deltaUnits < -0.0001)
-    .sort((a, b) => a.deltaUnits - b.deltaUnits); // most negative first
+    .filter((l) => l.deltaUsd < -MIN_USD)
+    .sort((a, b) => a.deltaUsd - b.deltaUsd); // most negative first
   const sinks = args.legs
-    .filter((l) => l.deltaUnits > 0.0001)
-    .sort((a, b) => b.deltaUnits - a.deltaUnits); // most positive first
+    .filter((l) => l.deltaUsd > MIN_USD)
+    .sort((a, b) => b.deltaUsd - a.deltaUsd);
 
   const swaps: SwapAttempt[] = [];
   const k = kit();
   const a = adapter();
 
   for (const src of sources) {
-    let remaining = -src.deltaUnits;
+    let remainingUsd = -src.deltaUsd;
     for (const sink of sinks) {
-      if (sink.deltaUnits <= 0 || remaining <= 0) continue;
-      const amount = Math.min(remaining, sink.deltaUnits);
-      // Round to 6 dp for stables, 8 dp for cirBTC.
-      const amountIn = amount.toFixed(src.token === "cirbtc" ? 8 : 6);
+      if (sink.deltaUsd <= 0 || remainingUsd <= 0) continue;
+      const amountUsd = Math.min(remainingUsd, sink.deltaUsd);
+      // Convert USD → tokenIn units using the price snapshot.
+      const srcPrice = args.balances.prices[src.token];
+      if (!srcPrice || srcPrice <= 0) {
+        swaps.push({
+          from: src.token,
+          to: sink.token,
+          amountIn: "0",
+          amountUsd,
+          error: `no USD price for ${src.token}`,
+        });
+        return { swaps, executed: false };
+      }
+      const amountTokens = amountUsd / srcPrice;
+      const amountIn = amountTokens.toFixed(TOKEN_DECIMALS[src.token]);
 
       const attempt: SwapAttempt = {
         from: src.token,
         to: sink.token,
         amountIn,
+        amountUsd,
       };
 
       try {
@@ -130,25 +154,27 @@ export async function executeRebalance(args: {
       } catch (err) {
         attempt.error = err instanceof Error ? err.message : String(err);
         swaps.push(attempt);
-        // Stop on first error to avoid cascading failures.
         return { swaps, executed: false };
       }
 
       swaps.push(attempt);
-      sink.deltaUnits -= amount;
-      remaining -= amount;
+      sink.deltaUsd -= amountUsd;
+      remainingUsd -= amountUsd;
     }
   }
 
   return { swaps, executed: swaps.length > 0 && swaps.every((s) => s.txHash) };
 }
 
+// Weights are USD-fraction of total now (was raw-unit fraction before —
+// wrong for cirBTC). Uses the price snapshot on `balances` so it's
+// internally consistent with the delta math above.
 export function currentWeights(balances: TokenBalances): TargetWeights {
   const total = balances.total;
   if (total <= 0) return { usdc: 1, eurc: 0, cirbtc: 0 };
   return {
-    usdc: balances.usdc / total,
-    eurc: balances.eurc / total,
-    cirbtc: balances.cirbtc / total,
+    usdc: balances.totals_usd.usdc / total,
+    eurc: balances.totals_usd.eurc / total,
+    cirbtc: balances.totals_usd.cirbtc / total,
   };
 }

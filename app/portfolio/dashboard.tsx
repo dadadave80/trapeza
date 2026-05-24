@@ -144,18 +144,25 @@ export function Dashboard({ address, goal, email }: Props) {
             <div className="flex flex-wrap items-start justify-between gap-6">
               <div>
                 <div className="text-xs uppercase tracking-wider text-zinc-500">
-                  Total deposited
+                  Total value
                 </div>
                 <div className="text-3xl font-semibold tabular-nums mt-1">
-                  {balances ? `${balances.total.toFixed(2)}` : "—"}
-                  <span className="text-base font-normal text-zinc-500 ml-1.5">
-                    units
-                  </span>
+                  {balances
+                    ? `$${balances.total.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`
+                    : "—"}
                 </div>
-                <div className="text-xs text-zinc-500 mt-1">
-                  Naive USD-equivalent (1 USDC = 1 EURC = 1 cirBTC unit). cirBTC
-                  USD price pending Phase 4 oracle.
-                </div>
+                {balances ? (
+                  <div className="text-xs text-zinc-500 mt-1">
+                    cirBTC ${" "}
+                    {balances.prices.cirbtc.toLocaleString(undefined, {
+                      maximumFractionDigits: 0,
+                    })}{" "}
+                    · source {balances.cirbtc_price_source}
+                  </div>
+                ) : null}
               </div>
               <div className="flex flex-col items-end gap-2">
                 <RegimePill
@@ -298,6 +305,7 @@ export function Dashboard({ address, goal, email }: Props) {
                 <BalanceRow
                   symbol="USDC"
                   amount={balances?.usdc}
+                  usd={balances?.totals_usd.usdc}
                   hint="cash · native gas"
                   target={latest?.target_weights.usdc}
                   loading={loading && !balances}
@@ -305,6 +313,7 @@ export function Dashboard({ address, goal, email }: Props) {
                 <BalanceRow
                   symbol="EURC"
                   amount={balances?.eurc}
+                  usd={balances?.totals_usd.eurc}
                   hint="safe-FX"
                   target={latest?.target_weights.eurc}
                   loading={loading && !balances}
@@ -312,6 +321,7 @@ export function Dashboard({ address, goal, email }: Props) {
                 <BalanceRow
                   symbol="cirBTC"
                   amount={balances?.cirbtc}
+                  usd={balances?.totals_usd.cirbtc}
                   hint="risk"
                   target={latest?.target_weights.cirbtc}
                   loading={loading && !balances}
@@ -377,12 +387,14 @@ export function Dashboard({ address, goal, email }: Props) {
 function BalanceRow({
   symbol,
   amount,
+  usd,
   hint,
   target,
   loading,
 }: {
   symbol: string;
   amount: number | undefined;
+  usd: number | undefined;
   hint: string;
   target?: number;
   loading: boolean;
@@ -397,7 +409,20 @@ function BalanceRow({
         </div>
       </div>
       <div className="text-right font-mono text-sm tabular-nums">
-        {loading ? "…" : amount !== undefined ? amount.toFixed(4) : "—"}
+        <div>
+          {loading
+            ? "…"
+            : amount !== undefined
+              ? amount.toLocaleString(undefined, { maximumFractionDigits: 6 })
+              : "—"}
+        </div>
+        <div className="text-[11px] text-zinc-500">
+          {loading
+            ? ""
+            : usd !== undefined
+              ? `$${usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : ""}
+        </div>
       </div>
     </div>
   );

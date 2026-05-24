@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getCirBtcUsdPrice } from "@/lib/agent/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,16 @@ export async function GET() {
     };
   }
   result.tables = tableResults;
+
+  // cirBTC price oracle sanity check.
+  try {
+    const price = await getCirBtcUsdPrice();
+    result.pricing = { cirbtc: price };
+  } catch (err) {
+    result.pricing = {
+      cirbtc: { ok: false, error: err instanceof Error ? err.message : String(err) },
+    };
+  }
 
   return NextResponse.json(result);
 }
