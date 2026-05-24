@@ -1,22 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
+// Newsreader (Production Type) — variable optical-size editorial serif.
+// Used for headlines, the portfolio value, and pull-quote reasoning.
+// Variable-axis font; "variable" weight + opsz axis lets us tune size-aware
+// optical sizing via font-variation-settings: "opsz".
+const newsreader = Newsreader({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: "variable",
+  style: ["normal", "italic"],
+  axes: ["opsz"],
+});
+
 export const metadata: Metadata = {
-  title: "Trapeza — an adaptive portfolio agent on Arc",
+  title: "Trapeza — adaptive portfolio agent on Arc",
   description:
-    "A Gemini-powered portfolio agent that rebalances USDC, EURC, and cirBTC on Arc Testnet according to your goal and the current market regime. Every decision is hash-pinned onchain.",
+    "Trapeza (τράπεζα · the agora's table). An AI agent that rebalances USDC, EURC, and cirBTC on Arc Testnet by the market regime, and pins its reasoning onchain.",
 };
 
 export default function RootLayout({
@@ -27,11 +39,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-background text-foreground selection:bg-[--oxblood] selection:text-[--ivory]">
         {children}
-        <Toaster />
+        <Toaster
+          theme="light"
+          toastOptions={{
+            classNames: {
+              toast: "!font-sans !bg-card !text-card-foreground !border-border",
+            },
+          }}
+        />
       </body>
     </html>
   );

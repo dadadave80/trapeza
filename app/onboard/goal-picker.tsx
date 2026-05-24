@@ -4,8 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { goalBands, type Goal } from "@/lib/types";
+
+const NUMERALS: Record<Goal, string> = {
+  conservative: "I",
+  balanced: "II",
+  aggressive: "III",
+};
 
 export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
   const router = useRouter();
@@ -40,9 +45,9 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-3">
-        {(Object.keys(goalBands) as Goal[]).map((g) => {
+    <div className="space-y-10">
+      <div className="grid gap-0 md:grid-cols-3 border-t border-b border-[color:var(--stone)]">
+        {(Object.keys(goalBands) as Goal[]).map((g, i) => {
           const b = goalBands[g];
           const active = selected === g;
           return (
@@ -50,48 +55,77 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
               key={g}
               type="button"
               onClick={() => setSelected(g)}
-              className={`text-left rounded-lg border transition-colors ${
+              aria-pressed={active}
+              className={`group text-left p-7 transition-colors ${
+                i < 2 ? "md:border-r border-[color:var(--stone)]" : ""
+              } ${
                 active
-                  ? "border-foreground bg-foreground/[0.04] dark:bg-foreground/[0.06]"
-                  : "border-border hover:bg-accent/50"
+                  ? "bg-[color:var(--ivory-2)]"
+                  : "hover:bg-[color:var(--ivory-2)]/50"
               }`}
             >
-              <Card className="border-0 bg-transparent shadow-none gap-3">
-                <CardHeader>
-                  <CardTitle className="text-lg">{b.label}</CardTitle>
-                  <CardDescription>{b.blurb}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  <div>
-                    cirBTC ∈ [{b.cirbtc[0].toFixed(2)}, {b.cirbtc[1].toFixed(2)}]
-                  </div>
-                  <div>EURC ≥ {b.eurcMin.toFixed(2)}</div>
-                </CardContent>
-              </Card>
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="display-italic text-[color:var(--oxblood)] text-3xl">
+                  §{NUMERALS[g]}
+                </span>
+                <span
+                  aria-hidden
+                  className={`size-3 rounded-full border-2 ${
+                    active
+                      ? "bg-[color:var(--oxblood)] border-[color:var(--oxblood)]"
+                      : "border-[color:var(--stone)] group-hover:border-[color:var(--ink)]"
+                  }`}
+                />
+              </div>
+              <h3
+                className="display text-[28px] mt-3 text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
+                style={{ fontVariationSettings: '"opsz" 32' }}
+              >
+                {b.label}
+              </h3>
+              <p className="text-sm text-[color:var(--ink-soft)] dark:text-[color:var(--taupe)] leading-relaxed mt-2">
+                {b.blurb}
+              </p>
+              <dl className="ledger mt-5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[12px] tabular-nums text-[color:var(--taupe)]">
+                <dt>cirBTC</dt>
+                <dd className="text-right text-[color:var(--ink)] dark:text-[color:var(--ivory)]">
+                  {b.cirbtc[0].toFixed(2)} – {b.cirbtc[1].toFixed(2)}
+                </dd>
+                <dt>EURC ≥</dt>
+                <dd className="text-right text-[color:var(--ink)] dark:text-[color:var(--ivory)]">
+                  {b.eurcMin.toFixed(2)}
+                </dd>
+              </dl>
             </button>
           );
         })}
       </div>
 
       {error ? (
-        <div className="rounded-md border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
-          <div className="font-medium mb-1">Wallet creation failed</div>
-          <div className="break-words">{error}</div>
-          <div className="mt-2 text-xs opacity-80">
-            Common causes: Supabase schema not applied (check{" "}
-            <code>lib/db/schema.sql</code> ran), Circle wallet-set id wrong, or
-            Arc Testnet rate-limited. Check the Vercel function logs for the
-            full server-side trace.
-          </div>
+        <div className="border border-[color:var(--oxblood)]/30 bg-[color:var(--oxblood-soft)] p-4 text-sm space-y-2">
+          <div className="kicker-oxblood">Wallet creation failed</div>
+          <div className="text-[color:var(--oxblood)] break-words">{error}</div>
+          <p className="text-xs text-[color:var(--ink-soft)] dark:text-[color:var(--taupe)]">
+            Most common: <code className="ledger">lib/db/schema.sql</code> not
+            applied in Supabase, <code className="ledger">CIRCLE_WALLET_SET_ID</code> mismatch,
+            or Arc Testnet rate-limited. Vercel function logs have the full server
+            trace.
+          </p>
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-zinc-500">
-          We&apos;ll create a Circle developer-controlled SCA wallet on Arc Testnet.
+      <div className="flex flex-wrap items-baseline justify-between gap-4 pt-4">
+        <p className="text-sm text-[color:var(--taupe)] max-w-prose">
+          A Circle developer-controlled SCA wallet is minted on Arc Testnet.
+          We never see your funds — the agent only ever holds your deposits.
         </p>
-        <Button onClick={submit} disabled={creating} size="lg">
-          {creating ? "Creating wallet…" : "Create my wallet"}
+        <Button
+          onClick={submit}
+          disabled={creating}
+          size="lg"
+          style={{ borderRadius: "3px" }}
+        >
+          {creating ? "Opening account…" : "Open my account →"}
         </Button>
       </div>
     </div>

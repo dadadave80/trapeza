@@ -1,15 +1,23 @@
 type Weights = { usdc: number; eurc: number; cirbtc: number };
 
 const COLORS = {
-  usdc: "bg-zinc-400 dark:bg-zinc-500",
-  eurc: "bg-sky-500 dark:bg-sky-400",
-  cirbtc: "bg-orange-500 dark:bg-orange-400",
+  usdc: "bg-[color:var(--gold)]",
+  eurc: "bg-[color:var(--ink-soft)]",
+  cirbtc: "bg-[color:var(--oxblood)]",
+} as const;
+
+const COLOR_DOTS = {
+  usdc: "bg-[color:var(--gold)]",
+  eurc: "bg-[color:var(--ink-soft)]",
+  cirbtc: "bg-[color:var(--oxblood)]",
 } as const;
 
 const LABEL = { usdc: "USDC", eurc: "EURC", cirbtc: "cirBTC" } as const;
 
-// Horizontal stacked bar. If `target` is provided, renders a thin ghost bar
-// underneath showing target allocation alongside actual.
+// A thin typographic rule split into proportional sections. Below it sits an
+// even thinner ghost rule showing the target allocation. This is intentionally
+// understated — most of the visual weight lives in the legend below, in
+// tabular numerals.
 export function AllocationBar({
   actual,
   target,
@@ -18,27 +26,40 @@ export function AllocationBar({
   target?: Weights;
 }) {
   const a = normalize(actual);
+  const t = target ? normalize(target) : undefined;
+
   return (
-    <div className="space-y-2">
-      <Bar weights={a} thick />
-      {target ? (
-        <div className="space-y-1.5">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500">
-            Target
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Bar weights={a} thickness={6} />
+        {t ? <Bar weights={t} thickness={2} muted /> : null}
+        {t ? (
+          <div className="flex justify-between text-[10px] uppercase tracking-[0.18em] text-[color:var(--taupe)] pt-1">
+            <span>current</span>
+            <span>—— target</span>
           </div>
-          <Bar weights={normalize(target)} />
-        </div>
-      ) : null}
-      <Legend actual={a} target={target ? normalize(target) : undefined} />
+        ) : null}
+      </div>
+
+      <Legend actual={a} target={t} />
     </div>
   );
 }
 
-function Bar({ weights, thick = false }: { weights: Weights; thick?: boolean }) {
+function Bar({
+  weights,
+  thickness,
+  muted,
+}: {
+  weights: Weights;
+  thickness: number;
+  muted?: boolean;
+}) {
   const keys = ["usdc", "eurc", "cirbtc"] as const;
   return (
     <div
-      className={`flex w-full overflow-hidden rounded-full bg-muted ${thick ? "h-4" : "h-2"}`}
+      className="flex w-full overflow-hidden"
+      style={{ height: `${thickness}px`, opacity: muted ? 0.4 : 1 }}
     >
       {keys.map((k) => {
         const w = weights[k] * 100;
@@ -59,15 +80,21 @@ function Bar({ weights, thick = false }: { weights: Weights; thick?: boolean }) 
 function Legend({ actual, target }: { actual: Weights; target?: Weights }) {
   const keys = ["usdc", "eurc", "cirbtc"] as const;
   return (
-    <div className="flex flex-wrap gap-4 text-xs">
+    <div className="grid grid-cols-3 gap-x-6 gap-y-2 text-sm">
       {keys.map((k) => (
-        <div key={k} className="flex items-center gap-1.5">
-          <span className={`${COLORS[k]} inline-block size-2.5 rounded-sm`} />
-          <span className="font-medium">{LABEL[k]}</span>
-          <span className="text-zinc-500">
-            {(actual[k] * 100).toFixed(0)}%
-            {target ? ` → ${(target[k] * 100).toFixed(0)}%` : ""}
-          </span>
+        <div key={k} className="flex items-baseline gap-2">
+          <span className={`${COLOR_DOTS[k]} inline-block size-1.5 rounded-full translate-y-[-2px]`} />
+          <div className="flex-1">
+            <div className="font-medium text-[color:var(--ink)] dark:text-[color:var(--ivory)]">
+              {LABEL[k]}
+            </div>
+            <div className="ledger text-xs text-[color:var(--taupe)] tabular-nums">
+              {(actual[k] * 100).toFixed(0)}%
+              {target ? (
+                <span className="text-[color:var(--ink-soft)]"> · {(target[k] * 100).toFixed(0)}% tgt</span>
+              ) : null}
+            </div>
+          </div>
         </div>
       ))}
     </div>

@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { supabaseServer, supabaseService } from "@/lib/db/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AllocationBar } from "@/components/allocation-bar";
 import { RegimePill } from "@/components/regime-pill";
-import { buttonVariants } from "@/components/ui/button";
+import { Masthead } from "@/components/masthead";
 import type { Signals, TargetWeights } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -36,8 +35,6 @@ export default async function TracePage({
   } = await sb.auth.getUser();
   if (!user) redirect("/onboard");
 
-  // Service role for the read; user.id-scoped so the user can only see
-  // their own decisions even with the bypass.
   const svc = supabaseService();
   const { data: d } = await svc
     .from("decisions")
@@ -49,148 +46,177 @@ export default async function TracePage({
   if (!d) notFound();
 
   const s = d.signals;
-  const targetSum = d.target_weights.usdc + d.target_weights.eurc + d.target_weights.cirbtc;
+  const dateline = new Date(d.created_at).toLocaleString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   return (
-    <div className="flex flex-col flex-1 px-6 py-10 sm:px-10">
-      <div className="w-full max-w-4xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
+    <div className="flex-1">
+      <Masthead
+        right={
           <Link
             href="/portfolio"
-            className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="kicker-ink underline underline-offset-4 decoration-[color:var(--stone)] hover:decoration-[color:var(--ink)]"
           >
             ← Portfolio
           </Link>
-          <RegimePill regime={d.regime} size="lg" />
-        </div>
+        }
+      />
 
-        <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-            Decision · {new Date(d.created_at).toLocaleString()}
-          </p>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            Why this allocation?
-          </h1>
-        </header>
+      <main className="mx-auto max-w-[820px] px-6 sm:px-10 py-12 sm:py-16">
+        <article className="space-y-10">
+          <header className="space-y-5">
+            <div className="flex items-center gap-3">
+              <RegimePill regime={d.regime} size="lg" />
+              <span className="kicker text-[color:var(--taupe)]">
+                Decision · {dateline}
+              </span>
+            </div>
 
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-lg leading-relaxed text-zinc-800 dark:text-zinc-200">
+            <h1
+              className="display text-[44px] sm:text-[60px] text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
+              style={{ fontVariationSettings: '"opsz" 72' }}
+            >
+              Why this allocation?
+            </h1>
+          </header>
+
+          <hr className="rule" />
+
+          {/* The leader — pull-quote reasoning */}
+          <section className="relative">
+            <span
+              className="absolute -left-2 -top-3 text-[color:var(--oxblood)] display-italic text-[64px] leading-none select-none"
+              aria-hidden
+            >
+              “
+            </span>
+            <blockquote
+              className="lede text-[24px] sm:text-[28px] text-[color:var(--ink)] dark:text-[color:var(--ivory)] pl-8"
+              style={{ fontVariationSettings: '"opsz" 28' }}
+            >
               {d.reasoning}
-            </p>
-            {d.alerts?.length ? (
-              <ul className="mt-4 space-y-1 text-sm">
-                {d.alerts.map((a, i) => (
-                  <li key={i} className="text-amber-700 dark:text-amber-400">
-                    ⚠︎ {a}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </CardContent>
-        </Card>
+            </blockquote>
+            <footer className="pl-8 pt-4 kicker">
+              — Trapeza, on Gemini 3.1 Pro
+            </footer>
+          </section>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Target allocation</CardTitle>
-              <CardDescription>
-                {targetSum > 0
-                  ? "Where the agent wants weights to sit, given the regime + goal bands."
-                  : "Target weights missing — likely a no-op tick."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          {d.alerts?.length ? (
+            <aside className="border-l-2 border-[color:var(--oxblood)] pl-4 space-y-1 text-sm">
+              <p className="kicker-oxblood">Alerts</p>
+              {d.alerts.map((a, i) => (
+                <p key={i} className="text-[color:var(--ink-soft)] dark:text-[color:var(--ivory)]">
+                  ⚠︎ {a}
+                </p>
+              ))}
+            </aside>
+          ) : null}
+
+          <hr className="rule" />
+
+          {/* Target allocation + signals — two-column editorial sidenote */}
+          <section className="grid gap-10 md:grid-cols-2">
+            <div>
+              <p className="kicker-ink mb-4">Target allocation</p>
               <AllocationBar
                 actual={d.target_weights}
                 target={d.prev_weights ?? undefined}
               />
               {d.prev_weights ? (
-                <p className="text-xs text-zinc-500 mt-3">
-                  Thin bar = weights at decision time. Thick bar = target.
+                <p className="kicker pt-4">
+                  Thicker rule = target. Thinner rule = where weights stood at
+                  decision time.
                 </p>
               ) : null}
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Signals</CardTitle>
-              <CardDescription>
-                Snapshot fed to Gemini at decision time.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                <SigRow label="BTC 24h" value={`${s.btc_24h_change.toFixed(2)}%`} />
-                <SigRow label="ETH 24h" value={`${s.eth_24h_change.toFixed(2)}%`} />
-                <SigRow label="BTC vol" value={`${s.btc_realized_vol.toFixed(2)}%`} />
-                <SigRow label="USDC" value={`$${s.usdc_price.toFixed(4)}`} />
-                <SigRow label="USDT" value={`$${s.usdt_price.toFixed(4)}`} />
-                <SigRow
+            <div>
+              <p className="kicker-ink mb-4">Signals snapshot</p>
+              <dl className="ledger grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 text-sm tabular-nums">
+                <Sig label="BTC 24h" value={`${s.btc_24h_change.toFixed(2)}%`} />
+                <Sig label="ETH 24h" value={`${s.eth_24h_change.toFixed(2)}%`} />
+                <Sig label="BTC vol" value={`${s.btc_realized_vol.toFixed(2)}%`} />
+                <Sig label="USDC" value={`$${s.usdc_price.toFixed(4)}`} />
+                <Sig label="USDT" value={`$${s.usdt_price.toFixed(4)}`} />
+                <Sig
                   label="Fetched"
                   value={new Date(s.fetched_at).toLocaleTimeString()}
                 />
               </dl>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Onchain</CardTitle>
-            <CardDescription>
-              The reasoning trace is hashed and pinned to Arc so this decision
-              is independently verifiable.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
+          <hr className="rule" />
+
+          {/* Onchain footnote */}
+          <section className="space-y-4">
+            <p className="kicker-ink">Onchain footnote</p>
+            <p className="text-sm text-[color:var(--ink-soft)] dark:text-[color:var(--taupe)] leading-relaxed max-w-prose">
+              The reasoning above was serialised, SHA-256 hashed, and pinned to
+              a TraceAnchor contract on Arc. The swap (if any) was settled
+              through Circle App Kit via a developer-controlled SCA wallet.
+            </p>
+
             <div className="space-y-1">
-              <div className="text-xs uppercase tracking-wider text-zinc-500">
-                Trace hash (sha256)
-              </div>
-              <code className="block break-all font-mono bg-muted px-3 py-2 rounded">
+              <span className="kicker">Trace hash · sha256</span>
+              <code className="ledger block break-all text-[12px] bg-[color:var(--ivory-2)] border border-[color:var(--stone-soft)] px-3 py-2 text-[color:var(--ink)] dark:text-[color:var(--ivory)]">
                 {d.trace_hash ?? "—"}
               </code>
             </div>
-            <div className="flex flex-wrap gap-3">
+
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-2">
               {d.arc_tx_hash ? (
                 <a
                   href={`https://testnet.arcscan.app/tx/${d.arc_tx_hash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                  className="kicker-ink underline underline-offset-4 decoration-[color:var(--stone)] hover:decoration-[color:var(--ink)]"
                 >
-                  Swap tx ↗
+                  Swap tx on arcscan ↗
                 </a>
               ) : null}
               {d.circle_tx_id ? (
-                <code className="text-xs text-zinc-500 self-center">
-                  Circle tx id {d.circle_tx_id.slice(0, 8)}…
-                </code>
+                <span className="kicker">
+                  Circle tx <span className="ledger text-[color:var(--taupe)] normal-case tracking-tight">{d.circle_tx_id.slice(0, 8)}…</span>
+                </span>
               ) : null}
               <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${
+                className={`inline-flex items-center text-[11px] tracking-[0.18em] uppercase ${
                   d.executed
-                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                    : "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400"
+                    ? "text-[color:var(--sage)]"
+                    : "text-[color:var(--taupe)]"
                 }`}
               >
-                {d.executed ? "Executed" : "Plan only"}
+                {d.executed ? "● Executed" : "○ Plan only"}
               </span>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </section>
+        </article>
+
+        <hr className="rule-thick mt-16" />
+        <p className="pt-6 kicker">
+          Trapeza · Arc Testnet · chainId 5042002
+        </p>
+      </main>
     </div>
   );
 }
 
-function SigRow({ label, value }: { label: string; value: string }) {
+function Sig({ label, value }: { label: string; value: string }) {
   return (
     <>
-      <dt className="text-zinc-500">{label}</dt>
-      <dd className="text-right font-mono tabular-nums">{value}</dd>
+      <dt className="text-[color:var(--taupe)] uppercase tracking-[0.14em] text-[11px]">
+        {label}
+      </dt>
+      <dd className="text-right text-[color:var(--ink)] dark:text-[color:var(--ivory)]">
+        {value}
+      </dd>
     </>
   );
 }

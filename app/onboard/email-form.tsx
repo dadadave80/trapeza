@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { supabaseBrowser } from "@/lib/db/browser";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export function EmailForm() {
   const router = useRouter();
@@ -19,8 +17,7 @@ export function EmailForm() {
     setSending(true);
 
     const supabase = supabaseBrowser();
-    const origin =
-      typeof window !== "undefined" ? window.location.origin : "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${origin}/auth/callback?next=/onboard` },
@@ -36,20 +33,31 @@ export function EmailForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          required
-          autoComplete="email"
-          placeholder="you@somewhere.dev"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
-      <Button type="submit" disabled={sending} className="w-full">
-        {sending ? "Sending…" : "Send magic link"}
+      <label
+        htmlFor="email"
+        className="block kicker"
+      >
+        Email
+      </label>
+      <input
+        id="email"
+        type="email"
+        required
+        autoComplete="email"
+        placeholder="you@somewhere.dev"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="ledger w-full bg-transparent border-0 border-b border-[color:var(--ink)] dark:border-[color:var(--ivory)] focus:outline-none focus:border-[color:var(--oxblood)] py-2.5 text-lg text-[color:var(--ink)] dark:text-[color:var(--ivory)] placeholder:text-[color:var(--taupe)]"
+        style={{ borderRadius: 0 }}
+      />
+      <Button
+        type="submit"
+        disabled={sending}
+        size="lg"
+        className="w-full"
+        style={{ borderRadius: "3px" }}
+      >
+        {sending ? "Sending magic link…" : "Send magic link →"}
       </Button>
     </form>
   );
