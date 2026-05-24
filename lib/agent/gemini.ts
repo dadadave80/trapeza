@@ -10,11 +10,15 @@ export function gemini() {
   return _gemini;
 }
 
-// Model identifiers are env-overridable. Defaults track what's been stable
-// on the Gemini API. Hit /api/healthz to see which models your API key
-// actually has access to, then override via env if you want a different
-// pair (e.g. gemini-3.0-pro / gemini-3.0-flash once GA).
+// Model identifiers are env-overridable. Defaults pair the latest stable
+// Flash with the best preview Pro available in the Gemini 3 family —
+// produces visibly better reasoning for the dashboard pull quote. Hit
+// /api/healthz to see what your API key has access to, then override
+// via env if needed.
+//
+//   GEMINI_FAST_MODEL   — regime classifier (Zod-validated JSON, ~200 tok)
+//   GEMINI_HEAVY_MODEL  — decision + reasoning (~800 tok)
 export const MODELS = {
-  fast: process.env.GEMINI_FAST_MODEL ?? "gemini-2.5-flash",
-  heavy: process.env.GEMINI_HEAVY_MODEL ?? "gemini-2.5-pro",
+  fast: process.env.GEMINI_FAST_MODEL ?? "gemini-3.5-flash",
+  heavy: process.env.GEMINI_HEAVY_MODEL ?? "gemini-3.1-pro-preview",
 } as const;
