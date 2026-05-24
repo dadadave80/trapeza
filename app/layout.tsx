@@ -14,9 +14,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trapeza — Treasury OS",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://trapeza-gamma.vercel.app",
+  ),
+  title: {
+    default: "Trapeza — Treasury OS",
+    template: "%s · Trapeza",
+  },
   description:
-    "Trapeza · the agora's table. A Groq-powered agent that rebalances USDC, EURC, and cirBTC on Arc Testnet by market regime, with every decision pinned onchain.",
+    "The money-changer's table, run by an agent. A Groq-powered portfolio agent that rebalances USDC, EURC, and cirBTC on Arc Testnet by market regime — with every decision pinned onchain.",
+  openGraph: {
+    title: "Trapeza · the money-changer's table, run by an agent",
+    description:
+      "Pick a risk profile, deposit USDC, and a Groq-hosted agent rebalances every 15 minutes on Arc Testnet — pinning a sha256 of its reasoning onchain.",
+    type: "website",
+    url: "/",
+    siteName: "Trapeza",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Trapeza · the money-changer's table, run by an agent",
+    description:
+      "Adaptive portfolio agent on Arc. Real onchain swaps. Reasoning hash-pinned for the audit.",
+  },
 };
 
 export default function RootLayout({

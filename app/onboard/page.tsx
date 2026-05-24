@@ -52,11 +52,13 @@ function UnauthedView({ params }: { params: { error?: string; sent?: string } })
   return (
     <section className="border-b-2 border-black">
       <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
-        <div className="col-span-12 lg:col-span-7 border-r border-black py-16 lg:py-24 lg:pr-6">
-          <div className="label mb-4">Step I / II · Sign in</div>
+        {/* Left hero: tighter top padding + smaller min font on mobile so
+            the email form stays above the fold on iPhone SE-class viewports. */}
+        <div className="col-span-12 lg:col-span-7 lg:border-r lg:border-black py-8 lg:py-24 lg:pr-6 order-2 lg:order-1">
+          <div className="label mb-3 lg:mb-4">Step I / II · Sign in</div>
           <h1
             className="font-bold tracking-[-0.04em] leading-[0.9]"
-            style={{ fontSize: "clamp(48px, 9vw, 128px)" }}
+            style={{ fontSize: "clamp(36px, 9vw, 128px)" }}
           >
             Open an account
             <br />
@@ -70,14 +72,15 @@ function UnauthedView({ params }: { params: { error?: string; sent?: string } })
             <br />
             table.
           </h1>
-          <p className="mt-8 max-w-xl text-[17px] leading-relaxed">
+          <p className="mt-6 lg:mt-8 max-w-xl text-base lg:text-[17px] leading-relaxed">
             A magic link arrives by email — no password, no seed phrase. We
             mint your Circle wallet the moment you pick a goal.
           </p>
         </div>
 
-        <div className="col-span-12 lg:col-span-5 py-16 lg:py-24 lg:pl-6">
-          <div className="label mb-5">Magic link</div>
+        {/* Right form: rendered first on mobile so it's above-the-fold. */}
+        <div className="col-span-12 lg:col-span-5 py-10 lg:py-24 lg:pl-6 order-1 lg:order-2 border-b border-black lg:border-b-0">
+          <div className="label mb-4 lg:mb-5">Magic link</div>
 
           {params.error ? (
             <div className="border-2 border-black p-4 mb-5" style={{ background: "var(--red-soft)" }}>
@@ -125,11 +128,11 @@ async function AuthedView({
     <>
       <section className="border-b-2 border-black">
         <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
-          <div className="col-span-12 lg:col-span-8 border-r border-black py-12 lg:pr-6">
-            <div className="label mb-4">Step II / II · Risk mandate</div>
+          <div className="col-span-12 lg:col-span-8 lg:border-r lg:border-black py-8 lg:py-12 lg:pr-6">
+            <div className="label mb-3 lg:mb-4">Step II / II · Risk mandate</div>
             <h1
               className="font-bold tracking-[-0.04em] leading-[0.9]"
-              style={{ fontSize: "clamp(48px, 9vw, 120px)" }}
+              style={{ fontSize: "clamp(36px, 9vw, 120px)" }}
             >
               What kind of
               <br />
@@ -140,13 +143,12 @@ async function AuthedView({
             </h1>
           </div>
 
-          <div className="col-span-12 lg:col-span-4 py-12 lg:pl-6 flex flex-col justify-end">
-            <p className="text-[16px] leading-relaxed max-w-prose">
+          <div className="col-span-12 lg:col-span-4 py-8 lg:py-12 lg:pl-6 flex flex-col justify-end gap-4">
+            <p className="text-base leading-relaxed max-w-prose">
               Each mandate fixes the bands the agent must respect on every
-              rebalance. You can switch later by editing your goal — the agent
-              will tilt back into the new bands on its next run.
+              rebalance. You can switch later from the dashboard.
             </p>
-            <p className="label mt-5">
+            <p className="label">
               Signed in as <span className="ledger normal-case tracking-tight text-[10px] opacity-60">{userEmail ?? userId}</span>
             </p>
           </div>
