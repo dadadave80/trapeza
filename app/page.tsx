@@ -1,136 +1,119 @@
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <div className="flex-1 flex flex-col">
-      {/* Masthead */}
-      <header className="border-b border-[color:var(--ink)] dark:border-[color:var(--ivory)]/30">
-        <div className="mx-auto max-w-[1080px] px-6 sm:px-10 py-5 flex items-baseline justify-between gap-6">
-          <Link href="/" className="flex items-baseline gap-3">
-            <span
-              className="font-display text-[28px] tracking-tight text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-              style={{ fontVariationSettings: '"opsz" 36' }}
-            >
-              Trapeza
-            </span>
-            <span className="kicker hidden sm:inline">
-              Τράπεζα · the agora&apos;s table
-            </span>
-          </Link>
-          <div className="flex items-center gap-4 text-sm">
-            <Link
-              href="/onboard"
-              className="kicker-ink underline underline-offset-4 decoration-[color:var(--stone)] hover:decoration-[color:var(--ink)]"
-            >
-              Sign in
+    <div className="flex-1 flex flex-col bg-white text-black">
+      {/* Top strip — same masthead vocabulary as the rest of the app */}
+      <header className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+          <div className="col-span-3 border-r border-black py-3 label-lg flex items-center">
+            <span className="text-base font-bold tracking-tight">Trapeza</span>
+            <span className="ml-2 hidden sm:inline opacity-60">▍ Treasury OS</span>
+          </div>
+          <div className="col-span-3 border-r border-black py-3 label hidden sm:flex items-center">
+            v0.4.0 / Arc Testnet
+          </div>
+          <div className="col-span-3 border-r border-black py-3 label hidden md:flex items-center">
+            5042002 / USDC-native gas
+          </div>
+          <div className="col-span-3 py-3 flex items-center justify-end label">
+            <Link href="/onboard" className="hover:underline">
+              ▶ Sign in
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 mx-auto w-full max-w-[1080px] px-6 sm:px-10 py-16 sm:py-24">
-        {/* Cover */}
-        <section className="grid lg:grid-cols-[1.5fr_1fr] gap-x-12 gap-y-10 items-end">
-          <div>
-            <p className="kicker mb-6">
-              No. 01 · An adaptive portfolio agent · Arc Testnet
-            </p>
+      {/* HERO */}
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+          <div className="col-span-12 lg:col-span-8 border-r border-black py-12 lg:py-20 lg:pr-6">
+            <div className="label mb-4">No. 01 / Adaptive portfolio agent</div>
             <h1
-              className="display text-[56px] sm:text-[88px] lg:text-[112px] text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-              style={{ fontVariationSettings: '"opsz" 144' }}
+              className="font-bold tracking-[-0.04em] leading-[0.88]"
+              style={{ fontSize: "clamp(56px, 11vw, 168px)" }}
             >
-              The money-changer&apos;s
+              The money-
               <br />
-              <span className="display-italic text-[color:var(--oxblood)]">
-                table,
-              </span>{" "}
-              now run by
+              changer&apos;s table,
               <br />
-              an agent.
+              <span
+                className="inline-block px-3 -ml-1"
+                style={{ background: "#00FF66" }}
+              >
+                run by an agent.
+              </span>
             </h1>
+            <div className="mt-10 pt-5 border-t border-black grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-4">
+              <Stat label="Chain" value="Arc Testnet" />
+              <Stat label="Settlement" value="USDC native" />
+              <Stat label="Cadence" value="*/15 min" />
+              <Stat label="Models" value="Groq · Llama 4" />
+            </div>
           </div>
 
-          <aside className="space-y-6 lg:pl-10 lg:border-l lg:border-[color:var(--stone)]">
-            <p className="lede text-[19px] text-[color:var(--ink-soft)] dark:text-[color:var(--taupe)]">
-              Pick a risk profile. Deposit testnet USDC. A Gemini agent reads
-              the market every fifteen minutes, decides weights inside your
-              bands, settles the rebalance through Circle App Kit on Arc, and
-              pins a SHA-256 hash of its reasoning onchain.
+          <div className="col-span-12 lg:col-span-4 py-12 lg:py-20 lg:pl-6 flex flex-col gap-8">
+            <p className="text-[19px] sm:text-[22px] leading-[1.35] font-medium tracking-tight">
+              Pick a risk profile. Deposit testnet USDC. A Groq-hosted agent
+              reads the market every fifteen minutes, decides weights inside
+              your bands, settles the rebalance through Circle App Kit, and
+              pins a SHA-256 hash of its reasoning to Arc.
             </p>
-
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link
-                href="/onboard"
-                className={buttonVariants({ size: "lg" })}
-                style={{ borderRadius: "3px" }}
-              >
-                Start →
+            <div className="flex flex-col gap-3">
+              <Link href="/onboard" className="btn-acid w-full text-base !py-4">
+                ▶ Start now
               </Link>
-              <Link
-                href="#how"
-                className={buttonVariants({ variant: "ghost", size: "lg" })}
-                style={{ borderRadius: "3px" }}
-              >
-                Read more
+              <Link href="#how" className="btn w-full">
+                ▢ How it works
               </Link>
             </div>
-          </aside>
-        </section>
+          </div>
+        </div>
+      </section>
 
-        <hr className="rule mt-16" />
+      {/* THREE PRINCIPLES */}
+      <section id="how" className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6">
+          <div className="label py-5 border-b border-black">02 / Principles</div>
+          <div className="grid grid-cols-1 lg:grid-cols-3">
+            <Principle
+              n="I"
+              title="A risk mandate in three words."
+              body="Conservative, Balanced, or Aggressive sets the floor and ceiling the agent must respect on every rebalance. The bands are hard constraints — the model cannot wander past them, no matter how loud the market gets."
+              right
+              bottom
+            />
+            <Principle
+              n="II"
+              title="Custody by Circle, settled on Arc."
+              body="On goal selection we mint a developer-controlled SCA wallet on Arc Testnet via @circle-fin/developer-controlled-wallets. Fund it from faucet.circle.com. USDC is Arc's native gas — no ETH required."
+              right
+              bottom
+            />
+            <Principle
+              n="III"
+              title="Reasoning that survives the audit."
+              body="Llama 4 classifies the regime, gpt-oss-120b decides the weights and writes a plain-English memo. Both the memo and the swap are sha256-hashed and pinned to a TraceAnchor contract — a footnote you can verify on testnet.arcscan.app."
+              bottom
+            />
+          </div>
+        </div>
+      </section>
 
-        {/* Three principles, presented as editorial articles */}
-        <section id="how" className="mt-14 grid gap-x-12 gap-y-12 md:grid-cols-3">
-          <Article
-            n="I"
-            title="A risk mandate, in three words."
-            body="Conservative, Balanced, or Aggressive: each defines the floor and ceiling the agent must respect on every rebalance. The bands are hard constraints — Gemini cannot wander past them, no matter how loud the market gets."
-          />
-          <Article
-            n="II"
-            title="Custody by Circle, settled on Arc."
-            body="On goal selection we mint a developer-controlled SCA wallet on Arc Testnet via @circle-fin/developer-controlled-wallets. Fund it from faucet.circle.com. USDC is Arc's native gas token, so the agent never needs to hold ETH."
-          />
-          <Article
-            n="III"
-            title="Reasoning that survives the audit."
-            body="Gemini 3 Flash classifies the regime; 3.1 Pro decides the weights and writes a plain-English memo. Both the memo and the resulting swap are sha256-hashed and pinned to a TraceAnchor contract — a footnote you can verify on testnet.arcscan.app."
-          />
-        </section>
-
-        <hr className="rule mt-16" />
-
-        {/* Stat strip */}
-        <section className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-6">
-          <Stat label="Chain" value="Arc Testnet" />
-          <Stat label="Settlement" value="USDC native" />
-          <Stat label="Rebalance" value="every 15 min" />
-          <Stat label="Models" value="Gemini 3 · 3.1" />
-        </section>
-      </main>
-
-      <footer className="border-t border-[color:var(--stone)] mt-20">
-        <div className="mx-auto max-w-[1080px] px-6 sm:px-10 py-6 flex flex-wrap items-baseline justify-between gap-3 text-xs">
-          <span className="kicker">
-            Built for the Agora Agents Hackathon · Canteen × Circle · RFB-04
-          </span>
-          <div className="flex gap-5">
-            <a
-              href="https://docs.arc.network"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="kicker-ink underline underline-offset-4 decoration-[color:var(--stone)] hover:decoration-[color:var(--ink)]"
-            >
-              Arc docs
+      {/* FOOTER STRIP */}
+      <footer className="mt-auto border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+          <div className="col-span-12 sm:col-span-6 border-r border-black py-4 label">
+            Built for the Agora Agents Hackathon ▍ Canteen × Circle ▍ RFB-04
+          </div>
+          <div className="col-span-6 sm:col-span-3 border-r border-black py-4 label">
+            <a href="https://docs.arc.network" target="_blank" rel="noopener noreferrer" className="hover:underline">
+              ▶ Arc docs
             </a>
-            <a
-              href="https://developers.circle.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="kicker-ink underline underline-offset-4 decoration-[color:var(--stone)] hover:decoration-[color:var(--ink)]"
-            >
-              Circle docs
+          </div>
+          <div className="col-span-6 sm:col-span-3 py-4 label">
+            <a href="https://developers.circle.com" target="_blank" rel="noopener noreferrer" className="hover:underline">
+              ▶ Circle docs
             </a>
           </div>
         </div>
@@ -139,41 +122,44 @@ export default function Home() {
   );
 }
 
-function Article({ n, title, body }: { n: string; title: string; body: string }) {
-  return (
-    <article className="space-y-3">
-      <div className="flex items-baseline gap-3">
-        <span
-          className="display-italic text-[color:var(--oxblood)] text-2xl"
-          aria-hidden
-        >
-          §{n}
-        </span>
-        <span className="kicker">Principle</span>
-      </div>
-      <h3
-        className="display text-2xl text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-        style={{ fontVariationSettings: '"opsz" 28' }}
-      >
-        {title}
-      </h3>
-      <p className="text-[15px] leading-relaxed text-[color:var(--ink-soft)] dark:text-[color:var(--taupe)]">
-        {body}
-      </p>
-    </article>
-  );
-}
-
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="kicker mb-1">{label}</div>
-      <div
-        className="font-display text-xl text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-        style={{ fontVariationSettings: '"opsz" 24' }}
-      >
-        {value}
-      </div>
+      <div className="label mb-1">{label}</div>
+      <div className="text-base font-bold tabular-nums">{value}</div>
     </div>
+  );
+}
+
+function Principle({
+  n,
+  title,
+  body,
+  right,
+  bottom,
+}: {
+  n: string;
+  title: string;
+  body: string;
+  right?: boolean;
+  bottom?: boolean;
+}) {
+  return (
+    <article
+      className={`p-8 lg:p-10 ${right ? "lg:border-r lg:border-black" : ""} ${
+        bottom ? "border-b lg:border-b-0 border-black" : ""
+      }`}
+    >
+      <div
+        className="font-bold inline-block px-2 -ml-1 mb-4"
+        style={{ background: "#00FF66", fontSize: "44px", lineHeight: 1 }}
+      >
+        §{n}
+      </div>
+      <h3 className="text-2xl font-bold tracking-tight leading-tight mb-3">
+        {title}
+      </h3>
+      <p className="text-[15px] leading-relaxed">{body}</p>
+    </article>
   );
 }

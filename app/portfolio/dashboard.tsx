@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
-import { Button, buttonVariants } from "@/components/ui/button";
 import { AllocationBar } from "@/components/allocation-bar";
 import { RegimePill, RegimeLockup } from "@/components/regime-pill";
 import { Masthead } from "@/components/masthead";
@@ -85,7 +84,7 @@ export function Dashboard({ address, goal, email }: Props) {
       } else if (body?.result?.skipped) {
         toast.message(`Agent · ${body.result.skipped}`);
       } else {
-        toast.success("Agent ran. Refreshing…");
+        toast.success("Agent ran");
       }
       await refresh();
     } catch (err) {
@@ -117,330 +116,330 @@ export function Dashboard({ address, goal, email }: Props) {
     }
   }
 
-  const decisionNum = decisions.length;
-
   return (
     <div className="flex-1">
       <Masthead
         right={
-          <span className="kicker hidden lg:inline">
-            {email ?? "signed in"} · {band.label}
-          </span>
+          <>
+            <span className="hidden md:inline opacity-60">{email}</span>
+            <span className="border-l border-black pl-4 hidden md:inline">
+              Mandate / {band.label}
+            </span>
+            <span className="border-l border-black pl-4 hidden lg:inline">
+              Arc Testnet ▶ 5042002
+            </span>
+          </>
         }
       />
 
-      <main className="mx-auto max-w-[1080px] px-6 sm:px-10 py-10 sm:py-14 space-y-14">
-        {/* ─── HERO ──────────────────────────────────────────────────── */}
-        <section>
-          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 mb-8">
-            <span className="kicker">
-              Issue №{String(decisionNum).padStart(3, "0")} · {band.label} mandate
-            </span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
-                {loading ? "Refreshing…" : "Refresh"}
-              </Button>
-              <Button size="sm" onClick={runAgent} disabled={running}>
-                {running ? "Running…" : "Run agent now"}
-              </Button>
-            </div>
-          </div>
-
-          <h1
-            className="display text-[44px] sm:text-[64px] lg:text-[76px] text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-            style={{ fontVariationSettings: '"opsz" 84' }}
-          >
-            Your portfolio is reading{" "}
-            <span className="display-italic text-[color:var(--ink-soft)] dark:text-[color:var(--taupe)]">
-              the market as
-            </span>{" "}
-            <RegimeLockup
-              regime={latest?.regime ?? "neutral"}
-              confidence={undefined}
-            />
-            .
-          </h1>
-
-          <div className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr] items-end">
-            <div>
-              <div className="kicker mb-2">Total value</div>
+      {/* ─── HERO ───────────────────────────────────────────────────── */}
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+          <div className="col-span-12 lg:col-span-8 border-r border-black py-10 lg:pr-6">
+            <div className="label mb-3">01 / Portfolio</div>
+            {balances ? (
               <div
-                className="display text-[56px] sm:text-[72px] text-[color:var(--ink)] dark:text-[color:var(--ivory)] leading-none"
-                style={{ fontVariationSettings: '"opsz" 96' }}
+                className="font-bold tabular-nums leading-[0.9] tracking-[-0.04em]"
+                style={{ fontSize: "clamp(64px, 14vw, 168px)" }}
               >
-                {balances
-                  ? `$${balances.total.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}`
-                  : "—"}
+                ${balances.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
-              {balances ? (
-                <div className="ledger text-xs text-[color:var(--taupe)] mt-3 tabular-nums">
-                  cirBTC ${" "}
-                  {balances.prices.cirbtc.toLocaleString(undefined, {
-                    maximumFractionDigits: 0,
-                  })}
-                  {"  ·  "}
-                  EURC ${balances.prices.eurc.toFixed(3)}
-                  {"  ·  "}
-                  source {balances.price_source}
-                </div>
-              ) : null}
-            </div>
-
-            <div className="lg:pl-10 lg:border-l lg:border-[color:var(--stone)]">
-              <div className="kicker mb-3">Allocation</div>
-              <AllocationBar
-                actual={currentWeights}
-                target={latest?.target_weights}
+            ) : (
+              <div
+                className="font-bold tabular-nums leading-[0.9] tracking-[-0.04em] opacity-30"
+                style={{ fontSize: "clamp(64px, 14vw, 168px)" }}
+              >
+                $—
+              </div>
+            )}
+            <div className="grid grid-cols-3 gap-x-4 mt-6 pt-4 border-t border-black">
+              <Datum
+                label="cirBTC oracle"
+                value={balances ? `$${balances.prices.cirbtc.toLocaleString()}` : "—"}
+              />
+              <Datum
+                label="EURC oracle"
+                value={balances ? `$${balances.prices.eurc.toFixed(3)}` : "—"}
+              />
+              <Datum
+                label="Source"
+                value={balances ? balances.price_source.toUpperCase() : "—"}
               />
             </div>
           </div>
-        </section>
 
-        <hr className="rule" />
-
-        {/* ─── LEADER ARTICLE ────────────────────────────────────────── */}
-        <section>
-          <div className="grid gap-10 lg:grid-cols-[1fr_2fr]">
-            <div className="space-y-2">
-              <p className="kicker-oxblood">The latest decision</p>
-              <p className="kicker text-[color:var(--taupe)]">
+          <div className="col-span-12 lg:col-span-4 py-10 lg:pl-6 flex flex-col justify-between gap-6">
+            <div>
+              <div className="label mb-3">02 / Regime</div>
+              <RegimeLockup
+                regime={latest?.regime ?? "neutral"}
+                confidence={undefined}
+              />
+              <div className="label mt-3">
                 {latest
                   ? new Date(latest.created_at).toLocaleString(undefined, {
-                      month: "long",
+                      month: "short",
                       day: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
                     })
-                  : "—"}
-              </p>
-              {latest ? (
-                <div className="pt-3 flex flex-col items-start gap-2">
+                  : "No agent run yet"}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={refresh} disabled={loading} className="btn flex-1">
+                {loading ? "▢ Refreshing" : "▢ Refresh"}
+              </button>
+              <button onClick={runAgent} disabled={running} className="btn-acid flex-1">
+                {running ? "▶ Running" : "▶ Run agent now"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── ALLOCATION ─────────────────────────────────────────────── */}
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 py-10">
+          <div className="label mb-6">03 / Allocation · current vs target</div>
+          <AllocationBar actual={currentWeights} target={latest?.target_weights} />
+        </div>
+      </section>
+
+      {/* ─── REASONING ──────────────────────────────────────────────── */}
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+          <div className="col-span-12 lg:col-span-3 border-r border-black py-10 lg:pr-6">
+            <div className="label mb-4">04 / Decision</div>
+            {latest ? (
+              <>
+                <div className="label space-y-1">
+                  <div>{new Date(latest.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</div>
+                  <div>{new Date(latest.created_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</div>
+                </div>
+                <div className="mt-6 flex flex-col gap-2">
                   <RegimePill regime={latest.regime} size="md" />
                   <span
-                    className={`inline-flex items-center text-[11px] tracking-[0.18em] uppercase ${
-                      latest.executed
-                        ? "text-[color:var(--sage)]"
-                        : "text-[color:var(--taupe)]"
-                    }`}
+                    className={`inline-block w-fit border-2 border-black px-2 py-1 label`}
+                    style={{ background: latest.executed ? "#00FF66" : "#FFFFFF" }}
                   >
-                    {latest.executed ? "● Executed" : "○ Plan only"}
+                    {latest.executed ? "▍ Executed" : "○ Plan only"}
                   </span>
                 </div>
-              ) : null}
-            </div>
-
-            <div className="space-y-6">
-              {latest ? (
-                <>
-                  <blockquote
-                    className="lede text-[22px] sm:text-[26px] text-[color:var(--ink)] dark:text-[color:var(--ivory)] relative pl-0"
-                  >
-                    <span
-                      className="absolute -left-3 -top-1 text-[color:var(--oxblood)] display-italic"
-                      aria-hidden
-                      style={{ fontSize: "1em" }}
-                    >
-                      “
-                    </span>
-                    {latest.reasoning}
-                  </blockquote>
-
-                  {latest.alerts?.length ? (
-                    <ul className="space-y-1 text-sm border-l-2 border-[color:var(--oxblood)] pl-3">
-                      {latest.alerts.map((a, i) => (
-                        <li key={i} className="text-[color:var(--oxblood)]">
-                          ⚠︎ {a}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-                    {latest.arc_tx_hash ? (
-                      <a
-                        href={`https://testnet.arcscan.app/tx/${latest.arc_tx_hash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="kicker-ink underline underline-offset-4 decoration-[color:var(--stone)] hover:decoration-[color:var(--ink)]"
-                      >
-                        Swap tx ↗
-                      </a>
-                    ) : null}
-                    {latest.trace_hash ? (
-                      <span
-                        className="ledger text-[color:var(--taupe)] tracking-tight"
-                        title={latest.trace_hash}
-                      >
-                        anchored {latest.trace_hash.slice(0, 10)}…{latest.trace_hash.slice(-6)}
-                      </span>
-                    ) : null}
-                    <Link
-                      href={`/trace/${latest.id}`}
-                      className="ml-auto kicker-ink underline underline-offset-4 decoration-[color:var(--stone)] hover:decoration-[color:var(--ink)]"
-                    >
-                      Read the full decision →
-                    </Link>
-                  </div>
-                </>
-              ) : (
-                <p className="lede text-[20px] text-[color:var(--taupe)]">
-                  No decisions on record yet. Fund your wallet and press{" "}
-                  <em>Run agent now</em> — Gemini will read the market, decide
-                  weights inside your bands, swap onchain, and pin the trace
-                  hash to Arc.
+              </>
+            ) : (
+              <div className="label opacity-60">No decisions yet</div>
+            )}
+          </div>
+          <div className="col-span-12 lg:col-span-9 py-10 lg:pl-6 space-y-6">
+            {latest ? (
+              <>
+                <p className="text-[22px] sm:text-[28px] leading-[1.25] font-medium tracking-tight">
+                  &ldquo;{latest.reasoning}&rdquo;
                 </p>
-              )}
-            </div>
-          </div>
-        </section>
 
-        <hr className="rule" />
+                {latest.alerts?.length ? (
+                  <ul className="border-l-2 border-[color:var(--red)] pl-4 space-y-1">
+                    {latest.alerts.map((a, i) => (
+                      <li key={i} className="text-sm" style={{ color: "var(--red)" }}>
+                        ⚠︎ {a}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
 
-        {/* ─── POSITIONS + DEPOSIT (classifieds layout) ──────────────── */}
-        <section className="grid gap-10 lg:grid-cols-[1.4fr_1fr]">
-          <div>
-            <div className="flex items-baseline justify-between mb-6">
-              <h2 className="kicker-ink">Positions</h2>
-              {error ? (
-                <span className="text-xs text-[color:var(--oxblood)]">{error}</span>
-              ) : balances ? (
-                <span className="ledger text-[11px] text-[color:var(--taupe)]">
-                  fetched {new Date(balances.fetched_at).toLocaleTimeString()}
-                </span>
-              ) : null}
-            </div>
-            <div className="border-t border-[color:var(--stone)]">
-              <PositionRow
-                symbol="USDC"
-                hint="cash · native gas"
-                amount={balances?.usdc}
-                usd={balances?.totals_usd.usdc}
-                target={latest?.target_weights.usdc}
-                loading={loading && !balances}
-              />
-              <PositionRow
-                symbol="EURC"
-                hint="safe-FX"
-                amount={balances?.eurc}
-                usd={balances?.totals_usd.eurc}
-                target={latest?.target_weights.eurc}
-                loading={loading && !balances}
-              />
-              <PositionRow
-                symbol="cirBTC"
-                hint="risk"
-                amount={balances?.cirbtc}
-                usd={balances?.totals_usd.cirbtc}
-                target={latest?.target_weights.cirbtc}
-                loading={loading && !balances}
-              />
-            </div>
-          </div>
-
-          <aside className="lg:pl-10 lg:border-l lg:border-[color:var(--stone)] space-y-6">
-            <div>
-              <h2 className="kicker-ink mb-2">Deposit</h2>
-              <p className="text-sm text-[color:var(--taupe)] leading-relaxed">
-                Send testnet USDC, EURC, or cirBTC to this address. Get
-                testnet USDC from{" "}
-                <a
-                  href="https://faucet.circle.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 decoration-[color:var(--stone)] hover:decoration-[color:var(--ink)]"
-                >
-                  faucet.circle.com
-                </a>
-                . On Arc, USDC is the native gas token.
-              </p>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="rounded-[3px] bg-[color:var(--ivory)] p-2 border border-[color:var(--stone)]">
-                <QRCodeSVG value={address} size={108} marginSize={0} fgColor="#231914" />
-              </div>
-              <div className="flex-1 min-w-0 space-y-2">
-                <div className="kicker">Arc address</div>
-                <code className="ledger block text-[12px] break-all bg-[color:var(--ivory-2)] px-2 py-1.5 rounded-[3px] border border-[color:var(--stone-soft)] text-[color:var(--ink)] dark:text-[color:var(--ivory)]">
-                  {address}
-                </code>
-                <div className="flex flex-wrap gap-1.5">
-                  <Button size="sm" variant="outline" onClick={copyAddress}>
-                    Copy
-                  </Button>
-                  <a
-                    href={`https://testnet.arcscan.app/address/${address}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={buttonVariants({ variant: "ghost", size: "sm" })}
-                  >
-                    Explorer ↗
-                  </a>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </section>
-
-        {decisions.length > 1 ? (
-          <>
-            <hr className="rule" />
-            <section>
-              <div className="flex items-baseline justify-between mb-6">
-                <h2 className="kicker-ink">History</h2>
-                <span className="kicker">
-                  Last {Math.min(10, decisions.length - 1)} decisions
-                </span>
-              </div>
-              <div className="border-t border-[color:var(--stone)]">
-                {decisions.slice(1, 11).map((d) => (
-                  <Link
-                    key={d.id}
-                    href={`/trace/${d.id}`}
-                    className="grid grid-cols-[auto_auto_1fr_auto] gap-x-4 items-center py-3.5 border-b border-[color:var(--stone-soft)] hover:bg-[color:var(--ivory-2)]/60 px-2 -mx-2 transition-colors group"
-                  >
-                    <span className="ledger text-[11px] text-[color:var(--taupe)] tabular-nums whitespace-nowrap">
-                      {new Date(d.created_at)
-                        .toLocaleString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                        .replace(",", "")}
-                    </span>
-                    <RegimePill regime={d.regime} size="sm" />
-                    <span
-                      className="lede text-[15px] text-[color:var(--ink)] dark:text-[color:var(--ivory)] line-clamp-1"
-                      style={{ fontVariationSettings: '"opsz" 18' }}
+                <div className="pt-4 border-t border-black grid sm:grid-cols-3 gap-x-4 gap-y-2 label">
+                  {latest.arc_tx_hash ? (
+                    <a
+                      href={`https://testnet.arcscan.app/tx/${latest.arc_tx_hash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline"
                     >
-                      {d.reasoning}
+                      ▶ Swap tx · arcscan
+                    </a>
+                  ) : <span />}
+                  {latest.trace_hash ? (
+                    <span className="ledger normal-case tracking-tight text-[10px]" title={latest.trace_hash}>
+                      sha256 {latest.trace_hash.slice(0, 8)}…{latest.trace_hash.slice(-4)}
                     </span>
-                    <span
-                      className={`text-[10px] uppercase tracking-[0.18em] ${
-                        d.executed
-                          ? "text-[color:var(--sage)]"
-                          : "text-[color:var(--taupe)]"
-                      } group-hover:translate-x-0.5 transition-transform`}
-                    >
-                      {d.executed ? "exec." : "plan"} →
-                    </span>
+                  ) : <span />}
+                  <Link href={`/trace/${latest.id}`} className="hover:underline sm:text-right">
+                    ▶ Full decision detail
                   </Link>
-                ))}
-              </div>
-            </section>
-          </>
-        ) : null}
+                </div>
+              </>
+            ) : (
+              <p className="text-[22px] sm:text-[28px] leading-[1.25] font-medium tracking-tight opacity-60">
+                No decisions on record yet. Fund the wallet below and hit
+                <span className="px-2 mx-2 border-2 border-black inline-block label" style={{ background: "#00FF66" }}>
+                  ▶ Run agent now
+                </span>
+                — the agent reads the market, decides weights inside your bands,
+                executes the rebalance onchain, and pins the trace.
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
 
-        <footer className="pt-8 pb-2 flex flex-wrap gap-3 items-baseline justify-between text-xs text-[color:var(--taupe)]">
-          <span className="kicker">Trapeza · Arc Testnet · chainId 5042002</span>
-          <span className="kicker">
-            Cron runs every 15 min · GitHub Actions
-          </span>
-        </footer>
-      </main>
+      {/* ─── POSITIONS ──────────────────────────────────────────────── */}
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 py-10">
+          <div className="flex items-baseline justify-between mb-6">
+            <div className="label">05 / Positions</div>
+            {error ? (
+              <div className="label" style={{ color: "var(--red)" }}>
+                Error: {error}
+              </div>
+            ) : balances ? (
+              <div className="label opacity-60">
+                Fetched {new Date(balances.fetched_at).toLocaleTimeString()}
+              </div>
+            ) : null}
+          </div>
+          <div className="border-2 border-black">
+            <div className="grid grid-cols-[1fr_120px_120px_80px] label bg-black text-white">
+              <div className="px-4 py-2.5">Symbol</div>
+              <div className="px-4 py-2.5 border-l border-white/20 text-right">Units</div>
+              <div className="px-4 py-2.5 border-l border-white/20 text-right">USD value</div>
+              <div className="px-4 py-2.5 border-l border-white/20 text-right">Target</div>
+            </div>
+            <PositionRow
+              symbol="USDC"
+              hint="cash · native gas"
+              amount={balances?.usdc}
+              usd={balances?.totals_usd.usdc}
+              target={latest?.target_weights.usdc}
+              loading={loading && !balances}
+            />
+            <PositionRow
+              symbol="EURC"
+              hint="safe-FX"
+              amount={balances?.eurc}
+              usd={balances?.totals_usd.eurc}
+              target={latest?.target_weights.eurc}
+              loading={loading && !balances}
+            />
+            <PositionRow
+              symbol="cirBTC"
+              hint="risk"
+              amount={balances?.cirbtc}
+              usd={balances?.totals_usd.cirbtc}
+              target={latest?.target_weights.cirbtc}
+              loading={loading && !balances}
+              last
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ─── DEPOSIT ────────────────────────────────────────────────── */}
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+          <div className="col-span-12 lg:col-span-4 border-r border-black py-10 lg:pr-6">
+            <div className="label mb-4">06 / Deposit</div>
+            <div className="border-2 border-black p-3 bg-white inline-block">
+              <QRCodeSVG value={address} size={150} marginSize={0} fgColor="#000000" />
+            </div>
+          </div>
+          <div className="col-span-12 lg:col-span-8 py-10 lg:pl-6 space-y-4">
+            <div className="label">Arc Testnet address</div>
+            <code className="block font-mono text-base sm:text-lg break-all border-2 border-black p-4 leading-tight">
+              {address}
+            </code>
+            <div className="grid sm:grid-cols-3 gap-3">
+              <button onClick={copyAddress} className="btn">
+                ▶ Copy address
+              </button>
+              <a
+                href={`https://testnet.arcscan.app/address/${address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn text-center"
+              >
+                ▶ View on arcscan
+              </a>
+              <a
+                href="https://faucet.circle.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-acid text-center"
+              >
+                ▶ Faucet.circle.com
+              </a>
+            </div>
+            <p className="text-sm opacity-70 leading-relaxed pt-2">
+              Send testnet USDC, EURC, or cirBTC. On Arc, USDC is the native gas
+              token — no ETH required for any transaction.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── HISTORY ────────────────────────────────────────────────── */}
+      {decisions.length > 1 ? (
+        <section className="border-b-2 border-black">
+          <div className="mx-auto max-w-[1280px] px-6 py-10">
+            <div className="flex items-baseline justify-between mb-6">
+              <div className="label">07 / History · last {Math.min(10, decisions.length - 1)} decisions</div>
+              <div className="label opacity-60">click any row →</div>
+            </div>
+            <div className="border-2 border-black">
+              <div className="grid grid-cols-[130px_110px_1fr_80px] label bg-black text-white">
+                <div className="px-4 py-2.5">When</div>
+                <div className="px-4 py-2.5 border-l border-white/20">Regime</div>
+                <div className="px-4 py-2.5 border-l border-white/20">Note</div>
+                <div className="px-4 py-2.5 border-l border-white/20 text-right">State</div>
+              </div>
+              {decisions.slice(1, 11).map((d, i, arr) => (
+                <Link
+                  key={d.id}
+                  href={`/trace/${d.id}`}
+                  className={`grid grid-cols-[130px_110px_1fr_80px] items-center hover:bg-[#fff6a3] transition-colors ${
+                    i < arr.length - 1 ? "border-b border-black" : ""
+                  }`}
+                >
+                  <div className="px-4 py-3 label ledger whitespace-nowrap">
+                    {new Date(d.created_at).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                  <div className="px-4 py-3 border-l border-black">
+                    <RegimePill regime={d.regime} size="sm" />
+                  </div>
+                  <div className="px-4 py-3 text-sm border-l border-black truncate">
+                    {d.reasoning}
+                  </div>
+                  <div className="px-4 py-3 label text-right border-l border-black">
+                    {d.executed ? "▍ Exec" : "○ Plan"}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* ─── FOOTER ─────────────────────────────────────────────────── */}
+      <footer>
+        <div className="mx-auto max-w-[1280px] px-6 py-4 flex flex-wrap items-baseline justify-between gap-3 label">
+          <span>Trapeza ▍ Treasury OS ▍ Arc Testnet · chainId 5042002</span>
+          <span className="opacity-60">Cron · every 15 min · GitHub Actions</span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function Datum({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="label mb-1">{label}</div>
+      <div className="text-lg font-bold tabular-nums ledger">{value}</div>
     </div>
   );
 }
@@ -452,6 +451,7 @@ function PositionRow({
   usd,
   target,
   loading,
+  last,
 }: {
   symbol: string;
   hint: string;
@@ -459,37 +459,34 @@ function PositionRow({
   usd: number | undefined;
   target?: number;
   loading: boolean;
+  last?: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[1fr_auto_auto] items-baseline gap-x-8 py-4 border-b border-[color:var(--stone-soft)]">
-      <div>
-        <div
-          className="display text-[22px] text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-          style={{ fontVariationSettings: '"opsz" 24' }}
-        >
-          {symbol}
-        </div>
-        <div className="kicker mt-0.5">
-          {hint}
-          {target !== undefined ? `  ·  target ${(target * 100).toFixed(0)}%` : ""}
-        </div>
+    <div
+      className={`grid grid-cols-[1fr_120px_120px_80px] items-center ${
+        !last ? "border-b border-black" : ""
+      }`}
+    >
+      <div className="px-4 py-4">
+        <div className="text-lg font-bold tracking-tight">{symbol}</div>
+        <div className="label-sm text-[color:var(--muted)]">{hint}</div>
       </div>
-      <div className="ledger text-right text-sm tabular-nums text-[color:var(--ink-soft)]">
+      <div className="px-4 py-4 border-l border-black text-right ledger text-sm tabular-nums">
         {loading
           ? "…"
           : amount !== undefined
             ? amount.toLocaleString(undefined, { maximumFractionDigits: 6 })
             : "—"}
       </div>
-      <div className="ledger text-right text-base tabular-nums text-[color:var(--ink)] dark:text-[color:var(--ivory)] min-w-[88px]">
+      <div className="px-4 py-4 border-l border-black text-right text-base font-bold tabular-nums">
         {loading
           ? "…"
           : usd !== undefined
-            ? `$${usd.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}`
+            ? `$${usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
             : "—"}
+      </div>
+      <div className="px-4 py-4 border-l border-black text-right ledger label tabular-nums">
+        {target !== undefined ? `${(target * 100).toFixed(0)}%` : "—"}
       </div>
     </div>
   );

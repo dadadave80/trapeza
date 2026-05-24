@@ -1,36 +1,31 @@
-type RegimeStyle = {
-  label: string;
-  bg: string;
-  text: string;
-  dot: string;
-  border: string;
+// Brutalist regime indicator — a bordered, colored stamp. Three variants:
+// pill (compact for history rows), stamp (mid-size for hero callouts),
+// and lockup (oversized for trace headers).
+
+const BG: Record<string, string> = {
+  risk_on: "#00FF66",
+  risk_off: "#FF0044",
+  neutral: "#FFEE00",
 };
 
-const STYLES: Record<string, RegimeStyle> = {
-  risk_on: {
-    label: "risk-on",
-    bg: "bg-[color:var(--sage-soft)]",
-    text: "text-[color:var(--sage)]",
-    dot: "bg-[color:var(--sage)]",
-    border: "border-[color:var(--sage)]/30",
-  },
-  risk_off: {
-    label: "risk-off",
-    bg: "bg-[color:var(--oxblood-soft)]",
-    text: "text-[color:var(--oxblood)]",
-    dot: "bg-[color:var(--oxblood)]",
-    border: "border-[color:var(--oxblood)]/30",
-  },
-  neutral: {
-    label: "neutral",
-    bg: "bg-[color:var(--gold-soft)]",
-    text: "text-[color:var(--gold)]",
-    dot: "bg-[color:var(--gold)]",
-    border: "border-[color:var(--gold)]/30",
-  },
+const FG: Record<string, string> = {
+  risk_on: "#000000",
+  risk_off: "#000000",
+  neutral: "#000000",
 };
 
-const DEFAULT = STYLES.neutral;
+const LABEL: Record<string, string> = {
+  risk_on: "risk-on",
+  risk_off: "risk-off",
+  neutral: "neutral",
+};
+
+function styleFor(regime: string) {
+  return {
+    background: BG[regime] ?? BG.neutral,
+    color: FG[regime] ?? FG.neutral,
+  };
+}
 
 export function RegimePill({
   regime,
@@ -41,30 +36,28 @@ export function RegimePill({
   size?: "sm" | "md" | "lg";
   confidence?: number;
 }) {
-  const s = STYLES[regime] ?? DEFAULT;
-  const sizing =
+  const padding =
     size === "lg"
-      ? "px-3.5 py-1.5 text-xs"
+      ? "px-3 py-1.5 text-[12px]"
       : size === "sm"
-        ? "px-2 py-0.5 text-[10px]"
-        : "px-2.5 py-1 text-[11px]";
+        ? "px-1.5 py-0.5 text-[9px]"
+        : "px-2 py-1 text-[10px]";
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-[3px] border font-medium uppercase tracking-[0.18em] ${sizing} ${s.bg} ${s.text} ${s.border}`}
+      className={`inline-flex items-center gap-1.5 border-2 border-black uppercase tracking-[0.2em] font-bold ${padding}`}
+      style={styleFor(regime)}
     >
-      <span className={`size-1.5 rounded-full ${s.dot}`} />
-      {s.label}
+      {LABEL[regime] ?? regime}
       {confidence !== undefined ? (
-        <span className="opacity-70 font-normal normal-case tracking-normal">
-          · {(confidence * 100).toFixed(0)}%
+        <span className="opacity-70 ledger normal-case tracking-tight">
+          {(confidence * 100).toFixed(0)}%
         </span>
       ) : null}
     </span>
   );
 }
 
-// A larger, editorial "lockup" rendering of the regime — used in the
-// dashboard hero where the regime IS the headline.
+// Big editorial stamp — used in dashboard hero and trace header.
 export function RegimeLockup({
   regime,
   confidence,
@@ -72,21 +65,23 @@ export function RegimeLockup({
   regime: string;
   confidence?: number;
 }) {
-  const s = STYLES[regime] ?? DEFAULT;
   return (
-    <span
-      className={`inline-flex items-baseline gap-2 ${s.text} font-display italic`}
-      style={{
-        fontVariationSettings: '"opsz" 72',
-        letterSpacing: "-0.02em",
-      }}
-    >
-      <span>{s.label}</span>
+    <div className="space-y-2">
+      <div
+        className="font-bold uppercase leading-none border-2 border-black px-5 py-5 inline-block tracking-[-0.02em]"
+        style={{
+          ...styleFor(regime),
+          fontSize: "clamp(32px, 5vw, 56px)",
+          letterSpacing: "-0.02em",
+        }}
+      >
+        {LABEL[regime] ?? regime}
+      </div>
       {confidence !== undefined ? (
-        <span className="ledger text-xs not-italic opacity-70 tabular-nums">
-          {(confidence * 100).toFixed(0)}%
-        </span>
+        <div className="label">
+          Confidence {(confidence * 100).toFixed(0)}%
+        </div>
       ) : null}
-    </span>
+    </div>
   );
 }

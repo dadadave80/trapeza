@@ -19,24 +19,24 @@ export default async function OnboardPage({
   const params = await searchParams;
 
   return (
-    <div className="flex-1 flex flex-col">
-      <header className="border-b border-[color:var(--ink)] dark:border-[color:var(--ivory)]/30">
-        <div className="mx-auto max-w-[1080px] px-6 sm:px-10 py-5 flex items-baseline justify-between gap-6">
-          <Link href="/" className="flex items-baseline gap-3">
-            <span
-              className="font-display text-[28px] tracking-tight text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-              style={{ fontVariationSettings: '"opsz" 36' }}
-            >
-              Trapeza
-            </span>
-            <span className="kicker hidden sm:inline">
-              Τράπεζα · the agora&apos;s table
-            </span>
+    <div className="flex-1 flex flex-col bg-white text-black">
+      {/* Masthead */}
+      <header className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+          <Link
+            href="/"
+            className="col-span-4 sm:col-span-3 border-r border-black py-3 label-lg flex items-center"
+          >
+            <span className="text-base font-bold tracking-tight">Trapeza</span>
+            <span className="ml-2 hidden sm:inline opacity-60">▍ Treasury OS</span>
           </Link>
+          <div className="col-span-8 sm:col-span-9 py-3 flex items-center justify-end label">
+            Arc Testnet ▶ 5042002
+          </div>
         </div>
       </header>
 
-      <main className="flex-1 mx-auto w-full max-w-[1080px] px-6 sm:px-10 py-16 sm:py-24">
+      <main className="flex-1">
         {!user ? (
           <UnauthedView params={params} />
         ) : (
@@ -49,52 +49,56 @@ export default async function OnboardPage({
 
 function UnauthedView({ params }: { params: { error?: string; sent?: string } }) {
   return (
-    <div className="grid lg:grid-cols-[1.4fr_1fr] gap-x-12 gap-y-10 items-start">
-      <div className="space-y-6">
-        <p className="kicker">Step I of II · Sign in</p>
-        <h1
-          className="display text-[44px] sm:text-[64px] text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-          style={{ fontVariationSettings: '"opsz" 84' }}
-        >
-          Open an account
-          <br />
-          at the agora&apos;s
-          <br />
-          <span className="display-italic text-[color:var(--oxblood)]">
+    <section className="border-b-2 border-black">
+      <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+        <div className="col-span-12 lg:col-span-7 border-r border-black py-16 lg:py-24 lg:pr-6">
+          <div className="label mb-4">Step I / II · Sign in</div>
+          <h1
+            className="font-bold tracking-[-0.04em] leading-[0.9]"
+            style={{ fontSize: "clamp(48px, 9vw, 128px)" }}
+          >
+            Open an account
+            <br />
+            at the
+            <span
+              className="inline-block px-3 ml-3"
+              style={{ background: "#00FF66" }}
+            >
+              agora&apos;s
+            </span>
+            <br />
             table.
-          </span>
-        </h1>
-        <p className="lede text-[19px] text-[color:var(--ink-soft)] dark:text-[color:var(--taupe)] max-w-prose">
-          A magic link arrives by email — no password, no seed phrase. We mint
-          your Circle wallet the moment you pick a goal.
-        </p>
-      </div>
-
-      <aside className="lg:pl-10 lg:border-l lg:border-[color:var(--stone)] space-y-5">
-        <div className="space-y-1">
-          <p className="kicker-ink">Magic link</p>
-          <hr className="rule" />
+          </h1>
+          <p className="mt-8 max-w-xl text-[17px] leading-relaxed">
+            A magic link arrives by email — no password, no seed phrase. We
+            mint your Circle wallet the moment you pick a goal.
+          </p>
         </div>
 
-        {params.error ? (
-          <div className="border border-[color:var(--oxblood)]/30 bg-[color:var(--oxblood-soft)] px-4 py-3 text-sm text-[color:var(--oxblood)]">
-            {decodeURIComponent(params.error)}
-          </div>
-        ) : null}
-        {params.sent ? (
-          <div className="border border-[color:var(--sage)]/30 bg-[color:var(--sage-soft)] px-4 py-3 text-sm text-[color:var(--sage)]">
-            Sent. Check your inbox — the link signs you in.
-          </div>
-        ) : null}
+        <div className="col-span-12 lg:col-span-5 py-16 lg:py-24 lg:pl-6">
+          <div className="label mb-5">Magic link</div>
 
-        <EmailForm />
+          {params.error ? (
+            <div className="border-2 border-black p-4 mb-5" style={{ background: "var(--red-soft)" }}>
+              <div className="label mb-1" style={{ color: "var(--red)" }}>Error</div>
+              <div className="text-sm">{decodeURIComponent(params.error)}</div>
+            </div>
+          ) : null}
+          {params.sent ? (
+            <div className="border-2 border-black p-4 mb-5" style={{ background: "#00FF66" }}>
+              <div className="label mb-1">Sent</div>
+              <div className="text-sm">Check your inbox. The link signs you in.</div>
+            </div>
+          ) : null}
 
-        <p className="kicker text-[color:var(--taupe)] pt-2">
-          We never store passwords. Sessions live in a signed cookie that
-          expires when you close your tab.
-        </p>
-      </aside>
-    </div>
+          <EmailForm />
+
+          <p className="mt-6 label opacity-60 leading-relaxed">
+            No password storage. Session cookie clears when you close the tab.
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -117,31 +121,38 @@ async function AuthedView({
   }
 
   return (
-    <div className="space-y-12">
-      <div className="space-y-4 max-w-3xl">
-        <p className="kicker">Step II of II · Risk mandate</p>
-        <h1
-          className="display text-[44px] sm:text-[64px] text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-          style={{ fontVariationSettings: '"opsz" 84' }}
-        >
-          What kind of
-          <br />
-          <span className="display-italic text-[color:var(--oxblood)]">
-            client
-          </span>{" "}
-          are you?
-        </h1>
-        <p className="lede text-[19px] text-[color:var(--ink-soft)] dark:text-[color:var(--taupe)] max-w-prose">
-          Each mandate fixes the bands the agent must respect on every
-          rebalance. You can switch later by editing your goal — the agent will
-          tilt back into the new bands on its next run.
-        </p>
-        <p className="kicker">
-          Signed in as <span className="ledger normal-case tracking-tight text-[color:var(--taupe)]">{userEmail ?? userId}</span>
-        </p>
-      </div>
+    <>
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+          <div className="col-span-12 lg:col-span-8 border-r border-black py-12 lg:pr-6">
+            <div className="label mb-4">Step II / II · Risk mandate</div>
+            <h1
+              className="font-bold tracking-[-0.04em] leading-[0.9]"
+              style={{ fontSize: "clamp(48px, 9vw, 120px)" }}
+            >
+              What kind of
+              <br />
+              <span className="inline-block px-3 -ml-1" style={{ background: "#00FF66" }}>
+                client
+              </span>{" "}
+              are you?
+            </h1>
+          </div>
+
+          <div className="col-span-12 lg:col-span-4 py-12 lg:pl-6 flex flex-col justify-end">
+            <p className="text-[16px] leading-relaxed max-w-prose">
+              Each mandate fixes the bands the agent must respect on every
+              rebalance. You can switch later by editing your goal — the agent
+              will tilt back into the new bands on its next run.
+            </p>
+            <p className="label mt-5">
+              Signed in as <span className="ledger normal-case tracking-tight text-[10px] opacity-60">{userEmail ?? userId}</span>
+            </p>
+          </div>
+        </div>
+      </section>
 
       <GoalPicker initialGoal={row?.goal ?? null} />
-    </div>
+    </>
   );
 }

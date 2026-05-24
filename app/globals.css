@@ -5,18 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Trapeza editorial design system.
+ * Trapeza · Brutalist treasury OS
  *
- * Palette: warm ivory paper + deep ink, with a single oxblood accent that
- * carries the brand. Functional accents: sage (executed / risk-on), taupe
- * (muted), stone (rules). Inspired by The Economist, FT, and Swiss-private-
- * bank quarterly reports. Light mode is the canonical look; dark mode keeps
- * the editorial spirit but inverts to deep ink on cream foreground.
- *
- * Typography:
- *   --font-display  Newsreader (variable serif, optical-size axis)
- *   --font-sans     Geist
- *   --font-mono     Geist Mono
+ * Pure white paper, jet black, one acid-green accent. Hard 2px borders,
+ * zero border-radius, no shadows. Type is Geist Sans for everything UI
+ * with Geist Mono for tabular data. Microscopic tracked-uppercase labels
+ * sit beside massive numerals. Confidence over politeness.
  */
 
 @theme inline {
@@ -47,195 +41,184 @@
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --font-display: var(--font-display);
-  --font-heading: var(--font-display);
 
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
-  --radius-xl: 6px;
-  --radius-2xl: 10px;
-  --radius-3xl: 16px;
+  /* No rounded corners anywhere by default. */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
 }
 
 :root {
-  /* Editorial light mode — warm ivory paper, ink type */
-  --ivory: oklch(0.96 0.018 84);             /* paper */
-  --ivory-2: oklch(0.94 0.022 84);           /* slightly recessed surfaces */
-  --ink: oklch(0.18 0.015 50);               /* body type */
-  --ink-soft: oklch(0.32 0.013 55);          /* secondary type */
-  --taupe: oklch(0.55 0.018 60);             /* muted captions */
-  --stone: oklch(0.84 0.020 75);             /* hairline rules */
-  --stone-soft: oklch(0.90 0.018 78);        /* very faint rules */
-  --oxblood: oklch(0.40 0.140 22);           /* brand accent */
-  --oxblood-soft: oklch(0.86 0.060 28);      /* accent bg wash */
-  --sage: oklch(0.46 0.080 145);             /* risk-on / executed */
-  --sage-soft: oklch(0.88 0.050 145);
-  --gold: oklch(0.62 0.110 75);              /* usdc / neutral data */
-  --gold-soft: oklch(0.92 0.050 80);
+  --paper: #ffffff;
+  --ink: #000000;
+  --acid: #00ff66;
+  --acid-soft: #c4ffd9;
+  --red: #ff0044;
+  --red-soft: #ffd6df;
+  --yellow: #ffee00;
+  --yellow-soft: #fff6a3;
+  --muted: #6a6a6a;
+  --muted-soft: #ededed;
 
-  --background: var(--ivory);
+  --background: var(--paper);
   --foreground: var(--ink);
-  --card: var(--ivory);
+  --card: var(--paper);
   --card-foreground: var(--ink);
-  --popover: var(--ivory);
+  --popover: var(--paper);
   --popover-foreground: var(--ink);
   --primary: var(--ink);
-  --primary-foreground: var(--ivory);
-  --secondary: var(--ivory-2);
+  --primary-foreground: var(--paper);
+  --secondary: var(--muted-soft);
   --secondary-foreground: var(--ink);
-  --muted: var(--ivory-2);
-  --muted-foreground: var(--taupe);
-  --accent: var(--oxblood);
-  --accent-foreground: var(--ivory);
-  --destructive: var(--oxblood);
-  --border: var(--stone);
-  --input: var(--stone);
-  --ring: var(--ink-soft);
-  --chart-1: var(--gold);
-  --chart-2: var(--sage);
-  --chart-3: var(--oxblood);
-  --chart-4: var(--taupe);
-  --chart-5: var(--ink);
+  --muted: var(--muted-soft);
+  --muted-foreground: var(--muted);
+  --accent: var(--acid);
+  --accent-foreground: var(--ink);
+  --destructive: var(--red);
+  --border: var(--ink);
+  --input: var(--ink);
+  --ring: var(--ink);
+  --chart-1: var(--ink);
+  --chart-2: var(--acid);
+  --chart-3: var(--red);
+  --chart-4: var(--yellow);
+  --chart-5: var(--muted);
 
-  --radius: 4px;
+  --radius: 0px;
 
-  --sidebar: var(--ivory);
+  --sidebar: var(--paper);
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--ink);
-  --sidebar-primary-foreground: var(--ivory);
-  --sidebar-accent: var(--ivory-2);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: var(--muted-soft);
   --sidebar-accent-foreground: var(--ink);
-  --sidebar-border: var(--stone);
-  --sidebar-ring: var(--ink-soft);
+  --sidebar-border: var(--ink);
+  --sidebar-ring: var(--ink);
 }
 
 .dark {
-  /* Deep ink mode — same editorial mood inverted */
-  --ivory: oklch(0.93 0.022 84);             /* type on dark */
-  --ivory-2: oklch(0.85 0.020 84);
-  --ink: oklch(0.13 0.012 48);               /* page background */
-  --ink-soft: oklch(0.20 0.013 52);          /* recessed surface */
-  --taupe: oklch(0.62 0.018 60);
-  --stone: oklch(0.26 0.012 60);
-  --stone-soft: oklch(0.20 0.012 58);
-  --oxblood: oklch(0.62 0.135 22);
-  --oxblood-soft: oklch(0.32 0.080 22);
-  --sage: oklch(0.65 0.090 145);
-  --sage-soft: oklch(0.30 0.060 145);
-  --gold: oklch(0.78 0.110 80);
-  --gold-soft: oklch(0.34 0.060 80);
+  /* Same palette inverted — black paper, white ink, same acid accent. */
+  --paper: #000000;
+  --ink: #ffffff;
+  --acid: #00ff66;
+  --acid-soft: #003314;
+  --red: #ff3366;
+  --red-soft: #330011;
+  --yellow: #ffee00;
+  --yellow-soft: #332f00;
+  --muted: #9c9c9c;
+  --muted-soft: #1a1a1a;
 
-  --background: var(--ink);
-  --foreground: var(--ivory);
-  --card: var(--ink-soft);
-  --card-foreground: var(--ivory);
-  --popover: var(--ink-soft);
-  --popover-foreground: var(--ivory);
-  --primary: var(--ivory);
-  --primary-foreground: var(--ink);
-  --secondary: var(--ink-soft);
-  --secondary-foreground: var(--ivory);
-  --muted: var(--ink-soft);
-  --muted-foreground: var(--taupe);
-  --accent: var(--oxblood);
-  --accent-foreground: var(--ivory);
-  --destructive: var(--oxblood);
-  --border: var(--stone);
-  --input: var(--stone);
-  --ring: var(--ivory-2);
-  --chart-1: var(--gold);
-  --chart-2: var(--sage);
-  --chart-3: var(--oxblood);
-  --chart-4: var(--taupe);
-  --chart-5: var(--ivory);
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--muted-soft);
+  --secondary-foreground: var(--ink);
+  --muted: var(--muted-soft);
+  --muted-foreground: var(--muted);
+  --accent: var(--acid);
+  --accent-foreground: var(--ink);
+  --destructive: var(--red);
+  --border: var(--ink);
+  --input: var(--ink);
+  --ring: var(--ink);
+  --chart-1: var(--ink);
+  --chart-2: var(--acid);
+  --chart-3: var(--red);
+  --chart-4: var(--yellow);
+  --chart-5: var(--muted);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--ink);
+    outline-color: var(--ink);
   }
   html {
     font-family: var(--font-sans), system-ui, sans-serif;
-    /* faint paper tooth — only visible in light mode */
-    background-image:
-      radial-gradient(at 0% 0%, oklch(0.94 0.025 80 / 0.6), transparent 40%),
-      radial-gradient(at 100% 0%, oklch(0.96 0.022 90 / 0.4), transparent 50%);
-    background-attachment: fixed;
   }
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "ss01", "cv11", "cv09";
+    background: var(--paper);
+    color: var(--ink);
+    font-feature-settings: "ss01", "cv11";
     letter-spacing: -0.005em;
   }
   ::selection {
-    background: var(--oxblood);
-    color: var(--ivory);
+    background: var(--acid);
+    color: var(--ink);
+  }
+  /* Strip default rounding from shadcn primitives we still inherit from. */
+  button,
+  input,
+  textarea,
+  select,
+  [role="button"] {
+    border-radius: 0 !important;
   }
 }
 
 @layer components {
-  /* Editorial kicker — small uppercase tracked label above headlines */
-  .kicker {
-    @apply text-[10px] uppercase tracking-[0.22em] text-[color:var(--taupe)];
-    font-weight: 500;
-    font-feature-settings: "ss01", "tnum";
+  /* Tiny tracked-uppercase label — the brutalist workhorse. */
+  .label {
+    @apply text-[10px] uppercase tracking-[0.25em] font-bold;
+    font-feature-settings: "tnum";
   }
-  .kicker-ink {
-    @apply text-[10px] uppercase tracking-[0.22em] text-[color:var(--ink)];
-    font-weight: 600;
+  .label-sm {
+    @apply text-[9px] uppercase tracking-[0.22em] font-bold;
+    font-feature-settings: "tnum";
   }
-  .kicker-oxblood {
-    @apply text-[10px] uppercase tracking-[0.22em];
-    color: var(--oxblood);
-    font-weight: 600;
+  .label-lg {
+    @apply text-xs uppercase tracking-[0.22em] font-bold;
+    font-feature-settings: "tnum";
   }
 
-  /* Magazine display headline — big variable-axis serif */
-  .display {
-    font-family: var(--font-display);
-    font-feature-settings: "liga", "kern", "onum";
-    font-optical-sizing: auto;
-    font-variation-settings: "opsz" 60;
-    letter-spacing: -0.02em;
-    line-height: 0.96;
-  }
-  .display-italic {
-    font-family: var(--font-display);
-    font-style: italic;
-    font-feature-settings: "liga", "kern";
-    font-optical-sizing: auto;
-    letter-spacing: -0.015em;
-  }
-
-  /* Pull-quote reasoning — used on dashboard + trace pages */
-  .lede {
-    font-family: var(--font-display);
-    font-weight: 400;
-    font-optical-sizing: auto;
-    font-variation-settings: "opsz" 18;
-    letter-spacing: -0.012em;
-    line-height: 1.35;
-  }
-
-  /* Tabular ledger numbers */
+  /* Tabular data figures. */
   .ledger {
     font-family: var(--font-mono);
     font-feature-settings: "tnum", "zero";
     letter-spacing: -0.01em;
   }
 
-  /* Hairline horizontal rule. Use on its own line to separate sections. */
-  .rule {
-    border: 0;
-    border-top: 1px solid var(--stone);
-    height: 1px;
-    margin: 0;
-  }
-  .rule-thick {
+  /* The page-wide hard divider — used between editorial sections. */
+  .hard-rule {
     border: 0;
     border-top: 2px solid var(--ink);
     height: 2px;
     margin: 0;
+  }
+  .thin-rule {
+    border: 0;
+    border-top: 1px solid var(--ink);
+    height: 1px;
+    margin: 0;
+  }
+
+  /* Buttons. Used by hand-rolled <button> elements in pages to keep the
+   * brutalist primitive consistent. */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2.5 border-2 border-black bg-white text-black text-[11px] uppercase tracking-[0.2em] font-bold hover:bg-black hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-acid {
+    @apply inline-flex items-center justify-center px-4 py-2.5 border-2 border-black text-black text-[11px] uppercase tracking-[0.2em] font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed;
+    background: var(--acid);
+  }
+  .btn-inverse {
+    @apply inline-flex items-center justify-center px-4 py-2.5 border-2 border-black bg-black text-white text-[11px] uppercase tracking-[0.2em] font-bold hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-[10px] tracking-[0.18em];
+  }
+
+  /* Input that matches the button language. */
+  .input-brut {
+    @apply w-full px-4 py-3 border-2 border-black bg-white text-black text-base placeholder:text-[color:var(--muted)] focus:outline-none focus:bg-[color:var(--muted-soft)];
   }
 }

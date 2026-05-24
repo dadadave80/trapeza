@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { goalBands, type Goal } from "@/lib/types";
 
 const NUMERALS: Record<Goal, string> = {
@@ -45,89 +44,115 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
   }
 
   return (
-    <div className="space-y-10">
-      <div className="grid gap-0 md:grid-cols-3 border-t border-b border-[color:var(--stone)]">
-        {(Object.keys(goalBands) as Goal[]).map((g, i) => {
-          const b = goalBands[g];
-          const active = selected === g;
-          return (
-            <button
-              key={g}
-              type="button"
-              onClick={() => setSelected(g)}
-              aria-pressed={active}
-              className={`group text-left p-7 transition-colors ${
-                i < 2 ? "md:border-r border-[color:var(--stone)]" : ""
-              } ${
-                active
-                  ? "bg-[color:var(--ivory-2)]"
-                  : "hover:bg-[color:var(--ivory-2)]/50"
-              }`}
-            >
-              <div className="flex items-baseline justify-between gap-4">
-                <span className="display-italic text-[color:var(--oxblood)] text-3xl">
-                  §{NUMERALS[g]}
-                </span>
-                <span
-                  aria-hidden
-                  className={`size-3 rounded-full border-2 ${
+    <>
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6">
+          <div className="label py-5 border-b border-black">
+            Pick one · weights live inside these bands
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3">
+            {(Object.keys(goalBands) as Goal[]).map((g, i) => {
+              const b = goalBands[g];
+              const active = selected === g;
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setSelected(g)}
+                  aria-pressed={active}
+                  className={`text-left p-8 lg:p-10 transition-colors border-b lg:border-b-0 border-black ${
+                    i < 2 ? "lg:border-r lg:border-black" : ""
+                  } ${
                     active
-                      ? "bg-[color:var(--oxblood)] border-[color:var(--oxblood)]"
-                      : "border-[color:var(--stone)] group-hover:border-[color:var(--ink)]"
+                      ? "bg-black text-white"
+                      : "bg-white text-black hover:bg-[#fff6a3]"
                   }`}
-                />
-              </div>
-              <h3
-                className="display text-[28px] mt-3 text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-                style={{ fontVariationSettings: '"opsz" 32' }}
-              >
-                {b.label}
-              </h3>
-              <p className="text-sm text-[color:var(--ink-soft)] dark:text-[color:var(--taupe)] leading-relaxed mt-2">
-                {b.blurb}
-              </p>
-              <dl className="ledger mt-5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[12px] tabular-nums text-[color:var(--taupe)]">
-                <dt>cirBTC</dt>
-                <dd className="text-right text-[color:var(--ink)] dark:text-[color:var(--ivory)]">
-                  {b.cirbtc[0].toFixed(2)} – {b.cirbtc[1].toFixed(2)}
-                </dd>
-                <dt>EURC ≥</dt>
-                <dd className="text-right text-[color:var(--ink)] dark:text-[color:var(--ivory)]">
-                  {b.eurcMin.toFixed(2)}
-                </dd>
-              </dl>
-            </button>
-          );
-        })}
-      </div>
+                >
+                  <div className="flex items-baseline justify-between gap-4">
+                    <div
+                      className="font-bold inline-block px-2 -ml-1"
+                      style={{
+                        background: active ? "#00FF66" : "#00FF66",
+                        color: "#000",
+                        fontSize: "44px",
+                        lineHeight: 1,
+                      }}
+                    >
+                      §{NUMERALS[g]}
+                    </div>
+                    <span
+                      aria-hidden
+                      className={`size-4 border-2 ${
+                        active ? "border-[#00FF66] bg-[#00FF66]" : "border-black"
+                      }`}
+                    />
+                  </div>
+                  <h3 className="text-3xl font-bold tracking-tight mt-5">
+                    {b.label}
+                  </h3>
+                  <p
+                    className={`text-sm leading-relaxed mt-3 ${
+                      active ? "text-white" : "text-black opacity-80"
+                    }`}
+                  >
+                    {b.blurb}
+                  </p>
+                  <dl
+                    className={`mt-6 pt-5 ${
+                      active ? "border-t border-white/40" : "border-t border-black"
+                    } grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 label ledger`}
+                  >
+                    <dt className="opacity-70">cirBTC</dt>
+                    <dd className="text-right tabular-nums">
+                      {b.cirbtc[0].toFixed(2)} – {b.cirbtc[1].toFixed(2)}
+                    </dd>
+                    <dt className="opacity-70">EURC ≥</dt>
+                    <dd className="text-right tabular-nums">
+                      {b.eurcMin.toFixed(2)}
+                    </dd>
+                  </dl>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
       {error ? (
-        <div className="border border-[color:var(--oxblood)]/30 bg-[color:var(--oxblood-soft)] p-4 text-sm space-y-2">
-          <div className="kicker-oxblood">Wallet creation failed</div>
-          <div className="text-[color:var(--oxblood)] break-words">{error}</div>
-          <p className="text-xs text-[color:var(--ink-soft)] dark:text-[color:var(--taupe)]">
-            Most common: <code className="ledger">lib/db/schema.sql</code> not
-            applied in Supabase, <code className="ledger">CIRCLE_WALLET_SET_ID</code> mismatch,
-            or Arc Testnet rate-limited. Vercel function logs have the full server
-            trace.
-          </p>
-        </div>
+        <section className="border-b-2 border-black">
+          <div className="mx-auto max-w-[1280px] px-6 py-6">
+            <div className="border-2 border-black p-5" style={{ background: "var(--red-soft)" }}>
+              <div className="label mb-2" style={{ color: "var(--red)" }}>
+                ▍ Wallet creation failed
+              </div>
+              <div className="text-sm font-medium mb-2 break-words">{error}</div>
+              <p className="label opacity-70 leading-relaxed normal-case">
+                Most common: <code className="ledger normal-case">lib/db/schema.sql</code> not
+                applied in Supabase, <code className="ledger normal-case">CIRCLE_WALLET_SET_ID</code> mismatch,
+                or Arc Testnet rate-limited. Vercel function logs have the full server trace.
+              </p>
+            </div>
+          </div>
+        </section>
       ) : null}
 
-      <div className="flex flex-wrap items-baseline justify-between gap-4 pt-4">
-        <p className="text-sm text-[color:var(--taupe)] max-w-prose">
-          A Circle developer-controlled SCA wallet is minted on Arc Testnet.
-          We never see your funds — the agent only ever holds your deposits.
-        </p>
-        <Button
-          onClick={submit}
-          disabled={creating}
-          size="lg"
-          style={{ borderRadius: "3px" }}
-        >
-          {creating ? "Opening account…" : "Open my account →"}
-        </Button>
-      </div>
-    </div>
+      <section>
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4 py-8">
+          <p className="col-span-12 lg:col-span-7 lg:border-r lg:border-black lg:pr-6 text-sm leading-relaxed">
+            A Circle developer-controlled SCA wallet is minted on Arc Testnet.
+            We never see your funds — the agent only ever holds your deposits.
+          </p>
+          <div className="col-span-12 lg:col-span-5 lg:pl-6 flex items-center justify-end pt-4 lg:pt-0">
+            <button
+              onClick={submit}
+              disabled={creating}
+              className="btn-acid w-full lg:w-auto !text-sm !py-4"
+            >
+              {creating ? "▶ Opening account…" : `▶ Open my ${selected} account`}
+            </button>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

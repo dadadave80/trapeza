@@ -1,23 +1,18 @@
 type Weights = { usdc: number; eurc: number; cirbtc: number };
 
-const COLORS = {
-  usdc: "bg-[color:var(--gold)]",
-  eurc: "bg-[color:var(--ink-soft)]",
-  cirbtc: "bg-[color:var(--oxblood)]",
-} as const;
-
-const COLOR_DOTS = {
-  usdc: "bg-[color:var(--gold)]",
-  eurc: "bg-[color:var(--ink-soft)]",
-  cirbtc: "bg-[color:var(--oxblood)]",
-} as const;
-
+const TOKENS = ["usdc", "eurc", "cirbtc"] as const;
 const LABEL = { usdc: "USDC", eurc: "EURC", cirbtc: "cirBTC" } as const;
+const HINT = { usdc: "cash · gas", eurc: "safe-FX", cirbtc: "risk" } as const;
 
-// A thin typographic rule split into proportional sections. Below it sits an
-// even thinner ghost rule showing the target allocation. This is intentionally
-// understated — most of the visual weight lives in the legend below, in
-// tabular numerals.
+const FILL_BG = {
+  usdc: "#000000",
+  eurc: "#000000",
+  cirbtc: "#00FF66",
+} as const;
+
+// Brutalist allocation visual. A row per token, each with a hard-bordered
+// bar showing actual fill, a 2px target marker, and tabular numerals on
+// either side. The bar gets out of the way of the numbers.
 export function AllocationBar({
   actual,
   target,
@@ -30,73 +25,57 @@ export function AllocationBar({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
-        <Bar weights={a} thickness={6} />
-        {t ? <Bar weights={t} thickness={2} muted /> : null}
-        {t ? (
-          <div className="flex justify-between text-[10px] uppercase tracking-[0.18em] text-[color:var(--taupe)] pt-1">
-            <span>current</span>
-            <span>—— target</span>
-          </div>
-        ) : null}
-      </div>
-
-      <Legend actual={a} target={t} />
-    </div>
-  );
-}
-
-function Bar({
-  weights,
-  thickness,
-  muted,
-}: {
-  weights: Weights;
-  thickness: number;
-  muted?: boolean;
-}) {
-  const keys = ["usdc", "eurc", "cirbtc"] as const;
-  return (
-    <div
-      className="flex w-full overflow-hidden"
-      style={{ height: `${thickness}px`, opacity: muted ? 0.4 : 1 }}
-    >
-      {keys.map((k) => {
-        const w = weights[k] * 100;
-        if (w <= 0) return null;
+      {TOKENS.map((k) => {
+        const actualPct = a[k];
+        const targetPct = t?.[k];
         return (
           <div
             key={k}
-            className={`${COLORS[k]} transition-all`}
-            style={{ width: `${w}%` }}
-            title={`${LABEL[k]} ${w.toFixed(1)}%`}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function Legend({ actual, target }: { actual: Weights; target?: Weights }) {
-  const keys = ["usdc", "eurc", "cirbtc"] as const;
-  return (
-    <div className="grid grid-cols-3 gap-x-6 gap-y-2 text-sm">
-      {keys.map((k) => (
-        <div key={k} className="flex items-baseline gap-2">
-          <span className={`${COLOR_DOTS[k]} inline-block size-1.5 rounded-full translate-y-[-2px]`} />
-          <div className="flex-1">
-            <div className="font-medium text-[color:var(--ink)] dark:text-[color:var(--ivory)]">
-              {LABEL[k]}
+            className="grid grid-cols-[88px_1fr_auto] gap-x-5 items-center"
+          >
+            <div>
+              <div className="text-base font-bold tracking-tight">{LABEL[k]}</div>
+              <div className="label-sm text-[color:var(--muted)]">{HINT[k]}</div>
             </div>
-            <div className="ledger text-xs text-[color:var(--taupe)] tabular-nums">
-              {(actual[k] * 100).toFixed(0)}%
-              {target ? (
-                <span className="text-[color:var(--ink-soft)]"> · {(target[k] * 100).toFixed(0)}% tgt</span>
+            <div className="relative h-9 border-2 border-black bg-white">
+              {targetPct !== undefined ? (
+                <div
+                  className="absolute top-[-12px] bottom-[-12px] w-[2px] bg-black"
+                  style={{ left: `${targetPct * 100}%` }}
+                >
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 label-sm whitespace-nowrap">
+                    tgt {(targetPct * 100).toFixed(0)}
+                  </div>
+                </div>
               ) : null}
+              <div
+                className="absolute top-0 bottom-0 left-0"
+                style={{
+                  width: `${Math.max(0, Math.min(1, actualPct)) * 100}%`,
+                  background: FILL_BG[k],
+                }}
+              />
+              <div
+                className="absolute top-1/2 -translate-y-1/2 label-sm pointer-events-none"
+                style={{
+                  left: `${Math.min(actualPct, 0.92) * 100}%`,
+                  marginLeft: "6px",
+                  color: k === "cirbtc" && actualPct > 0.08 ? "#000" : "#000",
+                  mixBlendMode: "difference",
+                  filter: "invert(1)",
+                }}
+              >
+                {(actualPct * 100).toFixed(0)}%
+              </div>
+            </div>
+            <div className="text-right ledger label tracking-[0.2em] tabular-nums whitespace-nowrap">
+              {targetPct !== undefined
+                ? `${(actualPct * 100).toFixed(0)} / ${(targetPct * 100).toFixed(0)}`
+                : `${(actualPct * 100).toFixed(0)}%`}
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

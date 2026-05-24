@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { supabaseBrowser } from "@/lib/db/browser";
-import { Button } from "@/components/ui/button";
 
 export function EmailForm() {
   const router = useRouter();
@@ -32,11 +31,8 @@ export function EmailForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <label
-        htmlFor="email"
-        className="block kicker"
-      >
+    <form onSubmit={onSubmit} className="space-y-3">
+      <label htmlFor="email" className="block label">
         Email
       </label>
       <input
@@ -47,18 +43,11 @@ export function EmailForm() {
         placeholder="you@somewhere.dev"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="ledger w-full bg-transparent border-0 border-b border-[color:var(--ink)] dark:border-[color:var(--ivory)] focus:outline-none focus:border-[color:var(--oxblood)] py-2.5 text-lg text-[color:var(--ink)] dark:text-[color:var(--ivory)] placeholder:text-[color:var(--taupe)]"
-        style={{ borderRadius: 0 }}
+        className="input-brut ledger"
       />
-      <Button
-        type="submit"
-        disabled={sending}
-        size="lg"
-        className="w-full"
-        style={{ borderRadius: "3px" }}
-      >
-        {sending ? "Sending magic link…" : "Send magic link →"}
-      </Button>
+      <button type="submit" disabled={sending} className="btn-inverse w-full !py-4">
+        {sending ? "▶ Sending…" : "▶ Send magic link"}
+      </button>
     </form>
   );
 }

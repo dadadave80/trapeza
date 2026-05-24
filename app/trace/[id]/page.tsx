@@ -59,164 +59,158 @@ export default async function TracePage({
     <div className="flex-1">
       <Masthead
         right={
-          <Link
-            href="/portfolio"
-            className="kicker-ink underline underline-offset-4 decoration-[color:var(--stone)] hover:decoration-[color:var(--ink)]"
-          >
+          <Link href="/portfolio" className="hover:underline">
             ← Portfolio
           </Link>
         }
       />
 
-      <main className="mx-auto max-w-[820px] px-6 sm:px-10 py-12 sm:py-16">
-        <article className="space-y-10">
-          <header className="space-y-5">
-            <div className="flex items-center gap-3">
-              <RegimePill regime={d.regime} size="lg" />
-              <span className="kicker text-[color:var(--taupe)]">
-                Decision · {dateline}
-              </span>
-            </div>
-
+      {/* HEADER */}
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+          <div className="col-span-12 lg:col-span-8 border-r border-black py-12 lg:pr-6">
+            <div className="label mb-3">Decision · {dateline}</div>
             <h1
-              className="display text-[44px] sm:text-[60px] text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-              style={{ fontVariationSettings: '"opsz" 72' }}
+              className="font-bold tracking-[-0.04em] leading-[0.9]"
+              style={{ fontSize: "clamp(56px, 11vw, 144px)" }}
             >
-              Why this allocation?
+              Why this
+              <br />
+              <span className="inline-block px-3 -ml-1" style={{ background: "#00FF66" }}>
+                allocation?
+              </span>
             </h1>
-          </header>
-
-          <hr className="rule" />
-
-          {/* The leader — pull-quote reasoning */}
-          <section className="relative">
+          </div>
+          <div className="col-span-12 lg:col-span-4 py-12 lg:pl-6 flex flex-col gap-4 justify-end">
+            <RegimePill regime={d.regime} size="lg" />
             <span
-              className="absolute -left-2 -top-3 text-[color:var(--oxblood)] display-italic text-[64px] leading-none select-none"
-              aria-hidden
+              className="inline-block w-fit border-2 border-black px-2 py-1 label"
+              style={{ background: d.executed ? "#00FF66" : "#FFFFFF" }}
             >
-              “
+              {d.executed ? "▍ Executed" : "○ Plan only"}
             </span>
-            <blockquote
-              className="lede text-[24px] sm:text-[28px] text-[color:var(--ink)] dark:text-[color:var(--ivory)] pl-8"
-              style={{ fontVariationSettings: '"opsz" 28' }}
-            >
-              {d.reasoning}
-            </blockquote>
-            <footer className="pl-8 pt-4 kicker">
-              — Trapeza, on Gemini 3.1 Pro
-            </footer>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          {d.alerts?.length ? (
-            <aside className="border-l-2 border-[color:var(--oxblood)] pl-4 space-y-1 text-sm">
-              <p className="kicker-oxblood">Alerts</p>
-              {d.alerts.map((a, i) => (
-                <p key={i} className="text-[color:var(--ink-soft)] dark:text-[color:var(--ivory)]">
-                  ⚠︎ {a}
-                </p>
-              ))}
-            </aside>
-          ) : null}
-
-          <hr className="rule" />
-
-          {/* Target allocation + signals — two-column editorial sidenote */}
-          <section className="grid gap-10 md:grid-cols-2">
-            <div>
-              <p className="kicker-ink mb-4">Target allocation</p>
-              <AllocationBar
-                actual={d.target_weights}
-                target={d.prev_weights ?? undefined}
-              />
-              {d.prev_weights ? (
-                <p className="kicker pt-4">
-                  Thicker rule = target. Thinner rule = where weights stood at
-                  decision time.
-                </p>
-              ) : null}
-            </div>
-
-            <div>
-              <p className="kicker-ink mb-4">Signals snapshot</p>
-              <dl className="ledger grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 text-sm tabular-nums">
-                <Sig label="BTC 24h" value={`${s.btc_24h_change.toFixed(2)}%`} />
-                <Sig label="ETH 24h" value={`${s.eth_24h_change.toFixed(2)}%`} />
-                <Sig label="BTC vol" value={`${s.btc_realized_vol.toFixed(2)}%`} />
-                <Sig label="USDC" value={`$${s.usdc_price.toFixed(4)}`} />
-                <Sig label="USDT" value={`$${s.usdt_price.toFixed(4)}`} />
-                <Sig
-                  label="Fetched"
-                  value={new Date(s.fetched_at).toLocaleTimeString()}
-                />
-              </dl>
-            </div>
-          </section>
-
-          <hr className="rule" />
-
-          {/* Onchain footnote */}
-          <section className="space-y-4">
-            <p className="kicker-ink">Onchain footnote</p>
-            <p className="text-sm text-[color:var(--ink-soft)] dark:text-[color:var(--taupe)] leading-relaxed max-w-prose">
-              The reasoning above was serialised, SHA-256 hashed, and pinned to
-              a TraceAnchor contract on Arc. The swap (if any) was settled
-              through Circle App Kit via a developer-controlled SCA wallet.
+      {/* PULL QUOTE */}
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+          <div className="col-span-12 lg:col-span-3 border-r border-black py-12 lg:pr-6">
+            <div className="label mb-4">01 / Memo</div>
+            <div className="label opacity-60">— Trapeza on Groq</div>
+          </div>
+          <div className="col-span-12 lg:col-span-9 py-12 lg:pl-6">
+            <p className="text-[26px] sm:text-[34px] leading-[1.2] font-medium tracking-tight">
+              &ldquo;{d.reasoning}&rdquo;
             </p>
+            {d.alerts?.length ? (
+              <ul className="mt-8 border-l-2 border-[color:var(--red)] pl-4 space-y-1">
+                {d.alerts.map((a, i) => (
+                  <li key={i} className="text-sm" style={{ color: "var(--red)" }}>
+                    ⚠︎ {a}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        </div>
+      </section>
 
-            <div className="space-y-1">
-              <span className="kicker">Trace hash · sha256</span>
-              <code className="ledger block break-all text-[12px] bg-[color:var(--ivory-2)] border border-[color:var(--stone-soft)] px-3 py-2 text-[color:var(--ink)] dark:text-[color:var(--ivory)]">
+      {/* TARGET ALLOCATION + SIGNALS */}
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+          <div className="col-span-12 lg:col-span-7 border-r border-black py-10 lg:pr-6">
+            <div className="label mb-6">02 / Target allocation</div>
+            <AllocationBar
+              actual={d.target_weights}
+              target={d.prev_weights ?? undefined}
+            />
+            {d.prev_weights ? (
+              <p className="label mt-5 opacity-70 normal-case tracking-wider">
+                Acid fill = target. Target marker (▏) = weights at decision time.
+              </p>
+            ) : null}
+          </div>
+          <div className="col-span-12 lg:col-span-5 py-10 lg:pl-6">
+            <div className="label mb-6">03 / Signals snapshot</div>
+            <dl className="border-2 border-black">
+              <Sig label="BTC 24h" value={`${s.btc_24h_change.toFixed(2)}%`} />
+              <Sig label="ETH 24h" value={`${s.eth_24h_change.toFixed(2)}%`} />
+              <Sig label="BTC vol" value={`${s.btc_realized_vol.toFixed(2)}%`} />
+              <Sig label="USDC" value={`$${s.usdc_price.toFixed(4)}`} />
+              <Sig label="USDT" value={`$${s.usdt_price.toFixed(4)}`} />
+              <Sig
+                label="Fetched"
+                value={new Date(s.fetched_at).toLocaleTimeString()}
+                last
+              />
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      {/* ONCHAIN FOOTNOTE */}
+      <section className="border-b-2 border-black">
+        <div className="mx-auto max-w-[1280px] px-6 py-12">
+          <div className="label mb-5">04 / Onchain footnote</div>
+          <p className="text-sm max-w-prose mb-6">
+            The reasoning above was serialised, SHA-256 hashed, and pinned to
+            the TraceAnchor contract on Arc. The swap (if any) was settled
+            through Circle App Kit via a developer-controlled SCA wallet.
+          </p>
+          <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
+            <div>
+              <div className="label mb-2">Trace hash · sha256</div>
+              <code className="block break-all font-mono text-sm border-2 border-black p-4">
                 {d.trace_hash ?? "—"}
               </code>
             </div>
-
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-2">
+            <div className="flex flex-col gap-3">
               {d.arc_tx_hash ? (
                 <a
                   href={`https://testnet.arcscan.app/tx/${d.arc_tx_hash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="kicker-ink underline underline-offset-4 decoration-[color:var(--stone)] hover:decoration-[color:var(--ink)]"
+                  className="btn"
                 >
-                  Swap tx on arcscan ↗
+                  ▶ Swap tx on arcscan
                 </a>
               ) : null}
               {d.circle_tx_id ? (
-                <span className="kicker">
-                  Circle tx <span className="ledger text-[color:var(--taupe)] normal-case tracking-tight">{d.circle_tx_id.slice(0, 8)}…</span>
-                </span>
+                <div className="border-2 border-black p-3">
+                  <div className="label mb-1">Circle tx id</div>
+                  <div className="ledger text-xs break-all opacity-70">
+                    {d.circle_tx_id}
+                  </div>
+                </div>
               ) : null}
-              <span
-                className={`inline-flex items-center text-[11px] tracking-[0.18em] uppercase ${
-                  d.executed
-                    ? "text-[color:var(--sage)]"
-                    : "text-[color:var(--taupe)]"
-                }`}
-              >
-                {d.executed ? "● Executed" : "○ Plan only"}
-              </span>
             </div>
-          </section>
-        </article>
+          </div>
+        </div>
+      </section>
 
-        <hr className="rule-thick mt-16" />
-        <p className="pt-6 kicker">
-          Trapeza · Arc Testnet · chainId 5042002
-        </p>
-      </main>
+      <footer>
+        <div className="mx-auto max-w-[1280px] px-6 py-4 flex flex-wrap items-baseline justify-between gap-3 label">
+          <span>Trapeza ▍ Treasury OS ▍ Arc Testnet · chainId 5042002</span>
+          <Link href="/portfolio" className="hover:underline">
+            ← Back to portfolio
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }
 
-function Sig({ label, value }: { label: string; value: string }) {
+function Sig({ label, value, last }: { label: string; value: string; last?: boolean }) {
   return (
-    <>
-      <dt className="text-[color:var(--taupe)] uppercase tracking-[0.14em] text-[11px]">
-        {label}
-      </dt>
-      <dd className="text-right text-[color:var(--ink)] dark:text-[color:var(--ivory)]">
-        {value}
-      </dd>
-    </>
+    <div
+      className={`grid grid-cols-[1fr_auto] items-center px-4 py-3 ${
+        !last ? "border-b border-black" : ""
+      }`}
+    >
+      <dt className="label">{label}</dt>
+      <dd className="ledger tabular-nums font-bold">{value}</dd>
+    </div>
   );
 }

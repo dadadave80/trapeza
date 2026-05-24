@@ -1,37 +1,23 @@
 import Link from "next/link";
 
-// Editorial masthead used at the top of every authed page. Reads like the
-// nameplate of a private bank report: the trade name, the etymology, and a
-// dateline-style ribbon on the right.
+// Brutalist top strip — black wordmark on white, vertical column dividers,
+// every cell a tracked-uppercase microcaption. Used on every authed page.
 export function Masthead({
   right,
 }: {
   right?: React.ReactNode;
 }) {
-  const now = new Date();
-  const dateline = now.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-
   return (
-    <div className="border-b border-[color:var(--ink)] dark:border-[color:var(--ivory)]/30 bg-background">
-      <div className="mx-auto max-w-[1080px] px-6 sm:px-10 py-5 flex items-baseline justify-between gap-6">
-        <Link href="/" className="group flex items-baseline gap-3">
-          <span
-            className="font-display text-2xl sm:text-[28px] tracking-tight text-[color:var(--ink)] dark:text-[color:var(--ivory)]"
-            style={{ fontVariationSettings: '"opsz" 36' }}
-          >
-            Trapeza
-          </span>
-          <span className="kicker hidden sm:inline">
-            Τράπεζα · the agora&apos;s table
-          </span>
+    <div className="border-b-2 border-black">
+      <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+        <Link
+          href="/"
+          className="col-span-4 sm:col-span-3 border-r border-black py-3 label-lg flex items-center"
+        >
+          <span className="text-base font-bold tracking-tight">Trapeza</span>
+          <span className="ml-2 hidden sm:inline opacity-60">▍ Treasury OS</span>
         </Link>
-        <div className="flex items-center gap-4">
-          <span className="kicker hidden md:inline">{dateline}</span>
+        <div className="col-span-8 sm:col-span-9 py-3 flex items-center justify-end gap-4 label">
           {right}
         </div>
       </div>
