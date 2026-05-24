@@ -10,7 +10,11 @@ export function gemini() {
   return _gemini;
 }
 
+// Model identifiers are env-overridable. Defaults track what's been stable
+// on the Gemini API. Hit /api/healthz to see which models your API key
+// actually has access to, then override via env if you want a different
+// pair (e.g. gemini-3.0-pro / gemini-3.0-flash once GA).
 export const MODELS = {
-  fast: "gemini-3-flash",
-  heavy: "gemini-3.1-pro",
+  fast: process.env.GEMINI_FAST_MODEL ?? "gemini-2.5-flash",
+  heavy: process.env.GEMINI_HEAVY_MODEL ?? "gemini-2.5-pro",
 } as const;

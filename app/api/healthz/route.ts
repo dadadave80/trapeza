@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getPrices } from "@/lib/agent/pricing";
+import { MODELS } from "@/lib/agent/gemini";
 
 export const dynamic = "force-dynamic";
 
@@ -70,7 +71,51 @@ export async function GET() {
     result.pricing = { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 
+  // Gemini model availability — lists which of the configured names
+  // generateContent is actually able to call. Names that 404 here are what
+  // the "Run agent now" button surfaces as model-not-found errors.
+  result.gemini = await checkGemini();
+
   return NextResponse.json(result);
+}
+
+async function checkGemini() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return { ok: false, error: "missing GEMINI_API_KEY" };
+
+  const targets = { fast: MODELS.fast, heavy: MODELS.heavy };
+  const results: Record<string, unknown> = { configured: targets };
+
+  // List all models the key has access to (REST is simpler than the SDK
+  // for a one-shot list call and works on any node runtime).
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=200`,
+    );
+    if (!res.ok) {
+      results.list = { ok: false, status: res.status, body: (await res.text()).slice(0, 300) };
+    } else {
+      const data = (await res.json()) as {
+        models?: Array<{
+          name?: string;
+          displayName?: string;
+          supportedGenerationMethods?: string[];
+        }>;
+      };
+      const supportsGen = (data.models ?? []).filter((m) =>
+        (m.supportedGenerationMethods ?? []).includes("generateContent"),
+      );
+      results.supportsGenerateContent = supportsGen.map((m) => m.name?.replace(/^models\//, ""));
+      // Are the configured models in that list?
+      const present = new Set(results.supportsGenerateContent as string[]);
+      results.fastAvailable = present.has(targets.fast);
+      results.heavyAvailable = present.has(targets.heavy);
+    }
+  } catch (err) {
+    results.list = { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+
+  return results;
 }
 
 function mask(s: string): string {
