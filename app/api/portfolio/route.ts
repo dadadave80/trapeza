@@ -11,13 +11,19 @@ export async function GET() {
   } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  // Service role for the read (RLS may be enabled on public.users).
   const svc = supabaseService();
-  const { data: row, error: readErr } = await svc
-    .from("users")
-    .select("arc_address, goal, circle_wallet_id")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: userRow, error: readErr }, { data: portfolioRow }] = await Promise.all([
+    svc
+      .from("users")
+      .select("arc_address, goal, circle_wallet_id")
+      .eq("id", user.id)
+      .maybeSingle(),
+    svc
+      .from("portfolios")
+      .select("last_checked_at, last_rebalance_at")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
 
   if (readErr) {
     return NextResponse.json(
@@ -25,17 +31,19 @@ export async function GET() {
       { status: 500 },
     );
   }
-  if (!row?.arc_address) {
+  if (!userRow?.arc_address) {
     return NextResponse.json({ error: "no wallet" }, { status: 404 });
   }
 
   try {
-    const balances = await readBalances(row.arc_address as `0x${string}`);
+    const balances = await readBalances(userRow.arc_address as `0x${string}`);
     return NextResponse.json({
-      address: row.arc_address,
-      walletId: row.circle_wallet_id,
-      goal: row.goal,
+      address: userRow.arc_address,
+      walletId: userRow.circle_wallet_id,
+      goal: userRow.goal,
       balances,
+      lastCheckedAt: portfolioRow?.last_checked_at ?? null,
+      lastRebalanceAt: portfolioRow?.last_rebalance_at ?? null,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

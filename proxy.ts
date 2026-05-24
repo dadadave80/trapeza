@@ -1,15 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-// Standard @supabase/ssr middleware. Calls getUser() on every request so
-// the session cookie gets refreshed before it expires — without this,
-// magic-link sessions silently die mid-demo and the user starts seeing
-// 401s on actions that should work.
+// Standard @supabase/ssr session-refresh proxy. Calls getUser() on every
+// request so the session cookie gets refreshed before it expires — without
+// this, magic-link sessions silently die mid-demo and the user starts
+// seeing 401s on actions that should work.
 //
-// Skipped for static assets, Next internals, and the public mockup tree
-// to keep request volume reasonable.
+// In Next 16 this lives in proxy.ts (was middleware.ts pre-16) and exports
+// `proxy`. Skipped for static assets, Next internals, demo, and the
+// public mockup tree to keep request volume reasonable.
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

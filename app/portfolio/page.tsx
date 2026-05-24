@@ -11,15 +11,19 @@ export default async function PortfolioPage() {
   } = await sb.auth.getUser();
   if (!user) redirect("/onboard");
 
-  // Read with service role — anon-with-session reads are blocked when RLS is
-  // enabled on public.users (default in newer Supabase projects). We've
-  // already authenticated above so it's safe to load the user's own row.
   const svc = supabaseService();
-  const { data: row, error } = await svc
-    .from("users")
-    .select("arc_address, goal, circle_wallet_id")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: row, error }, { data: portfolio }] = await Promise.all([
+    svc
+      .from("users")
+      .select("arc_address, goal, circle_wallet_id")
+      .eq("id", user.id)
+      .maybeSingle(),
+    svc
+      .from("portfolios")
+      .select("last_checked_at")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
 
   if (error) {
     console.error("[portfolio] user row read failed:", error);
@@ -35,6 +39,7 @@ export default async function PortfolioPage() {
       address={row.arc_address as `0x${string}`}
       goal={(row.goal ?? "balanced") as "conservative" | "balanced" | "aggressive"}
       email={user.email ?? null}
+      lastCheckedAt={portfolio?.last_checked_at ?? null}
     />
   );
 }

@@ -11,7 +11,9 @@
     "entity-secret:ciphertext": "bun scripts/circle-entity-secret.ts ciphertext",
     "entity-secret:register": "bun scripts/circle-entity-secret.ts register",
     "create-wallet-set": "bun scripts/create-wallet-set.ts",
-    "deploy-anchor": "bun scripts/deploy-trace-anchor.ts"
+    "deploy-anchor": "bun scripts/deploy-trace-anchor.ts",
+    "swap-test": "bun scripts/swap-test.ts",
+    "test": "bun test"
   },
   "dependencies": {
     "@ai-sdk/groq": "^3.0.39",
