@@ -55,11 +55,15 @@ export const regimeOutputSchema = z.object({
 });
 export type RegimeOutput = z.infer<typeof regimeOutputSchema>;
 
+// All fields required (no .optional / .default). Groq's strict JSON-schema
+// mode rejects any property in `properties` that isn't also listed in
+// `required`, so we ask the model for an explicit (possibly empty) alerts
+// array rather than letting it omit the field.
 export const decisionOutputSchema = z.object({
   target_weights: targetWeightsSchema,
   rebalance_now: z.boolean(),
   reasoning: z.string().min(20),
-  alerts: z.array(z.string()).default([]),
+  alerts: z.array(z.string()),
 });
 export type DecisionOutput = z.infer<typeof decisionOutputSchema>;
 
