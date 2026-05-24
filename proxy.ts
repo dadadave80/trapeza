@@ -1,14 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-// Standard @supabase/ssr session-refresh proxy. Calls getUser() on every
-// request so the session cookie gets refreshed before it expires — without
-// this, magic-link sessions silently die mid-demo and the user starts
-// seeing 401s on actions that should work.
+// Supabase session-refresh proxy. Only runs on routes that NEED an authed
+// session — calling getUser() on every request adds 300-500ms (network hop
+// to Supabase auth) which is brutal on cold starts of the proxy lambda.
 //
-// In Next 16 this lives in proxy.ts (was middleware.ts pre-16) and exports
-// `proxy`. Skipped for static assets, Next internals, demo, and the
-// public mockup tree to keep request volume reasonable.
+// Allow-list approach: matcher only catches the routes whose UX actually
+// depends on a fresh session cookie. /onboard, /, /demo, /api/webhooks,
+// /api/healthz, /api/agent/run (bearer-authed cron) all run without the
+// proxy.
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -32,22 +32,18 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // Triggers cookie refresh if the JWT is nearing expiry.
   await supabase.auth.getUser();
-
   return response;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico, icon, opengraph-image
-     * - public /mockups/* design exploration (no auth, no need)
-     * - any file with an extension (.svg, .png, .jpg, .css, .js…)
-     */
-    "/((?!_next/static|_next/image|favicon.ico|icon|opengraph-image|mockups|.*\\..*).*)",
+    "/portfolio/:path*",
+    "/trace/:path*",
+    "/api/wallet/:path*",
+    "/api/portfolio/:path*",
+    "/api/trace/:path*",
+    "/api/agent/trigger/:path*",
+    "/api/agent/initialize/:path*",
   ],
 };
