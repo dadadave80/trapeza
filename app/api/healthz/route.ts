@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getPrices } from "@/lib/agent/pricing";
-import { MODELS } from "@/lib/agent/gemini";
+import { MODELS } from "@/lib/agent/llm";
 
 export const dynamic = "force-dynamic";
 
-// Diagnostic: verifies Supabase URL + anon key + service role key end-to-end
-// against the actual schema. Safe to expose — returns masked key prefixes
-// only. Used both as a smoke test after env changes and to confirm RLS
-// behavior (the anon row count vs service-role row count tells you whether
-// RLS is enabled on the table).
+// Diagnostic: verifies Supabase URL + anon key + service role key, the
+// pricing oracle, and the Groq LLM provider end-to-end. Safe to expose —
+// returns only masked key prefixes (no full key material).
 export async function GET() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -23,6 +21,7 @@ export async function GET() {
       CIRCLE_API_KEY: maskEnv(process.env.CIRCLE_API_KEY),
       CIRCLE_ENTITY_SECRET: maskEnv(process.env.CIRCLE_ENTITY_SECRET),
       CIRCLE_WALLET_SET_ID: maskEnv(process.env.CIRCLE_WALLET_SET_ID),
+      GROQ_API_KEY: maskEnv(process.env.GROQ_API_KEY),
       ARC_USDC_ADDRESS: process.env.ARC_USDC_ADDRESS ?? null,
       ARC_EURC_ADDRESS: process.env.ARC_EURC_ADDRESS ?? null,
       ARC_CIRBTC_ADDRESS: process.env.ARC_CIRBTC_ADDRESS ?? null,
@@ -38,7 +37,6 @@ export async function GET() {
 
   // Test each table with both keys; compare counts to spot RLS-blocked reads.
   const tables = ["users", "portfolios", "decisions"] as const;
-
   const anonClient = createClient(url, anon, { auth: { persistSession: false } });
   const svcClient = createClient(url, service, { auth: { persistSession: false } });
 
@@ -64,53 +62,46 @@ export async function GET() {
   }
   result.tables = tableResults;
 
-  // Price oracle sanity check (cirBTC + EURC come from one CoinGecko call).
+  // Price oracle sanity check.
   try {
     result.pricing = await getPrices();
   } catch (err) {
     result.pricing = { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 
-  // Gemini model availability — lists which of the configured names
-  // generateContent is actually able to call. Names that 404 here are what
-  // the "Run agent now" button surfaces as model-not-found errors.
-  result.gemini = await checkGemini();
+  // Groq model availability.
+  result.llm = await checkGroq();
 
   return NextResponse.json(result);
 }
 
-async function checkGemini() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return { ok: false, error: "missing GEMINI_API_KEY" };
+async function checkGroq() {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return { ok: false, error: "missing GROQ_API_KEY" };
 
   const targets = { fast: MODELS.fast, heavy: MODELS.heavy };
-  const results: Record<string, unknown> = { configured: targets };
+  const results: Record<string, unknown> = { provider: "groq", configured: targets };
 
-  // List all models the key has access to (REST is simpler than the SDK
-  // for a one-shot list call and works on any node runtime).
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=200`,
-    );
+    const res = await fetch("https://api.groq.com/openai/v1/models", {
+      headers: { authorization: `Bearer ${apiKey}` },
+    });
     if (!res.ok) {
       results.list = { ok: false, status: res.status, body: (await res.text()).slice(0, 300) };
-    } else {
-      const data = (await res.json()) as {
-        models?: Array<{
-          name?: string;
-          displayName?: string;
-          supportedGenerationMethods?: string[];
-        }>;
-      };
-      const supportsGen = (data.models ?? []).filter((m) =>
-        (m.supportedGenerationMethods ?? []).includes("generateContent"),
-      );
-      results.supportsGenerateContent = supportsGen.map((m) => m.name?.replace(/^models\//, ""));
-      // Are the configured models in that list?
-      const present = new Set(results.supportsGenerateContent as string[]);
-      results.fastAvailable = present.has(targets.fast);
-      results.heavyAvailable = present.has(targets.heavy);
+      return results;
     }
+    const data = (await res.json()) as {
+      data?: Array<{ id?: string; active?: boolean; context_window?: number }>;
+    };
+    const ids = (data.data ?? [])
+      .filter((m) => m.active !== false)
+      .map((m) => m.id)
+      .filter((x): x is string => !!x)
+      .sort();
+    results.availableModels = ids;
+    const present = new Set(ids);
+    results.fastAvailable = present.has(targets.fast);
+    results.heavyAvailable = present.has(targets.heavy);
   } catch (err) {
     results.list = { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
