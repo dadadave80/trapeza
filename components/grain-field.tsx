@@ -23,14 +23,18 @@ type Particle = {
 };
 
 // Tune-ables.
-const DENSITY = 0.00018;        // particles per viewport pixel
-const MAX_PARTICLES = 700;
-const REPEL_RADIUS = 110;        // px
-const REPEL_STRENGTH = 0.85;
+const DENSITY = 0.00026;         // particles per viewport pixel
+const MAX_PARTICLES = 1000;
+const REPEL_RADIUS = 120;        // px
+const REPEL_STRENGTH = 0.95;
 const SPRING = 0.045;            // pulls each particle back to its home
 const DAMPING = 0.84;            // velocity decay each frame
-const PARTICLE_COLOR_LIGHT = "0, 0, 0";       // black on greyish paper
-const PARTICLE_COLOR_DARK = "255, 255, 255";  // white on near-black ink
+const PARTICLE_COLOR_LIGHT = "20, 20, 18";    // warm near-black on greyish paper
+const PARTICLE_COLOR_DARK = "240, 240, 235";  // warm near-white on near-black ink
+const ALPHA_MIN = 0.22;
+const ALPHA_RANGE = 0.55;        // → 0.22 – 0.77
+const RADIUS_MIN = 0.6;
+const RADIUS_RANGE = 1.6;        // → 0.6 – 2.2 px
 
 export function GrainField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -91,8 +95,8 @@ export function GrainField() {
           y,
           vx: 0,
           vy: 0,
-          r: 0.4 + Math.random() * 1.4,
-          alpha: 0.08 + Math.random() * 0.38,
+          r: RADIUS_MIN + Math.random() * RADIUS_RANGE,
+          alpha: ALPHA_MIN + Math.random() * ALPHA_RANGE,
         };
       });
     };
@@ -185,7 +189,6 @@ export function GrainField() {
       ref={canvasRef}
       aria-hidden
       className="pointer-events-none fixed inset-0 z-0"
-      style={{ mixBlendMode: "multiply" }}
     />
   );
 }
