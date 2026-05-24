@@ -6,9 +6,19 @@ import { MODELS } from "@/lib/agent/llm";
 export const dynamic = "force-dynamic";
 
 // Diagnostic: verifies Supabase URL + anon key + service role key, the
-// pricing oracle, and the Groq LLM provider end-to-end. Safe to expose —
-// returns only masked key prefixes (no full key material).
-export async function GET() {
+// pricing oracle, and the Groq LLM provider end-to-end. Returns only
+// masked key prefixes (no full key material).
+//
+// Gated in production: requires ?token=CRON_SECRET to discourage casual
+// reconnaissance. Local development is open.
+export async function GET(req: Request) {
+  if (process.env.NODE_ENV === "production") {
+    const token = new URL(req.url).searchParams.get("token");
+    if (!token || token !== process.env.CRON_SECRET) {
+      return NextResponse.json({ error: "not found" }, { status: 404 });
+    }
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY;

@@ -13,11 +13,14 @@ const NUMERALS: Record<Goal, string> = {
 
 export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
   const router = useRouter();
-  const [selected, setSelected] = useState<Goal>(initialGoal ?? "balanced");
+  // No default — user MUST pick. Prevents the "click through, get balanced
+  // by accident" failure mode QA #11.
+  const [selected, setSelected] = useState<Goal | null>(initialGoal);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit() {
+    if (!selected) return;
     setCreating(true);
     setError(null);
     try {
@@ -47,8 +50,13 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
     <>
       <section className="border-b-2 border-black">
         <div className="mx-auto max-w-[1280px] px-6">
-          <div className="label py-5 border-b border-black">
-            Pick one · weights live inside these bands
+          <div className="label py-5 border-b border-black flex items-baseline justify-between gap-3 flex-wrap">
+            <span>Pick one · weights live inside these bands</span>
+            {!selected ? (
+              <span className="text-[color:var(--muted)]">
+                ▢ no selection yet
+              </span>
+            ) : null}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3">
             {(Object.keys(goalBands) as Goal[]).map((g, i) => {
@@ -72,7 +80,7 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
                     <div
                       className="font-bold inline-block px-2 -ml-1"
                       style={{
-                        background: active ? "#00FF66" : "#00FF66",
+                        background: "#00FF66",
                         color: "#000",
                         fontSize: "44px",
                         lineHeight: 1,
@@ -83,7 +91,9 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
                     <span
                       aria-hidden
                       className={`size-4 border-2 ${
-                        active ? "border-[#00FF66] bg-[#00FF66]" : "border-black"
+                        active
+                          ? "border-[#00FF66] bg-[#00FF66]"
+                          : "border-black"
                       }`}
                     />
                   </div>
@@ -121,7 +131,10 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
       {error ? (
         <section className="border-b-2 border-black">
           <div className="mx-auto max-w-[1280px] px-6 py-6">
-            <div className="border-2 border-black p-5" style={{ background: "var(--red-soft)" }}>
+            <div
+              className="border-2 border-black p-5"
+              style={{ background: "var(--red-soft)" }}
+            >
               <div className="label mb-2" style={{ color: "var(--red)" }}>
                 ▍ Wallet creation failed
               </div>
@@ -145,10 +158,14 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
           <div className="col-span-12 lg:col-span-5 lg:pl-6 flex items-center justify-end pt-4 lg:pt-0">
             <button
               onClick={submit}
-              disabled={creating}
+              disabled={creating || !selected}
               className="btn-acid w-full lg:w-auto !text-sm !py-4"
             >
-              {creating ? "▶ Opening account…" : `▶ Open my ${selected} account`}
+              {creating
+                ? "▶ Opening account…"
+                : selected
+                  ? `▶ Open my ${selected} account`
+                  : "▶ Select a mandate above"}
             </button>
           </div>
         </div>
