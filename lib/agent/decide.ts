@@ -25,13 +25,43 @@ export async function decide(ctx: DecisionContext): Promise<DecisionOutput> {
   return { ...output, target_weights: clamped };
 }
 
+// Four-asset clamp. cirbtc is clamped to its [min,max] range; eurc/usyc/usdc
+// have minimum floors. After enforcing floors we let the four weights sum to
+// 1 by scaling the "free" portion of eurc + usyc + usdc proportionally (the
+// part above each floor). cirbtc never gets scaled — the band cap is hard.
 function clampToBand(
   w: DecisionOutput["target_weights"],
   band: (typeof goalBands)[keyof typeof goalBands],
 ): DecisionOutput["target_weights"] {
   const cirbtc = Math.min(Math.max(w.cirbtc, band.cirbtc[0]), band.cirbtc[1]);
+
   let eurc = Math.max(w.eurc, band.eurcMin);
-  if (eurc + cirbtc > 1) eurc = Math.max(band.eurcMin, 1 - cirbtc);
-  const usdc = Math.max(0, 1 - eurc - cirbtc);
-  return { usdc, eurc, cirbtc };
+  let usyc = Math.max(w.usyc, band.usycMin);
+  let usdc = Math.max(w.usdc, band.usdcMin);
+
+  let sum = cirbtc + eurc + usyc + usdc;
+
+  if (sum > 1) {
+    // Shave from the above-floor "excess" of eurc/usyc/usdc, proportional to
+    // each one's excess. cirbtc is already at its range so we don't touch it.
+    const excess = sum - 1;
+    const eurcExcess = eurc - band.eurcMin;
+    const usycExcess = usyc - band.usycMin;
+    const usdcExcess = usdc - band.usdcMin;
+    const totalExcess = eurcExcess + usycExcess + usdcExcess;
+    if (totalExcess > 0) {
+      eurc -= (excess * eurcExcess) / totalExcess;
+      usyc -= (excess * usycExcess) / totalExcess;
+      usdc -= (excess * usdcExcess) / totalExcess;
+    }
+    sum = cirbtc + eurc + usyc + usdc;
+  }
+
+  if (sum < 1) {
+    // Underflow: park the slack in USDC — the agent's job is to deploy cash
+    // into yield/FX/risk, but leftover always means "more cash".
+    usdc += 1 - sum;
+  }
+
+  return { usdc, eurc, cirbtc, usyc };
 }

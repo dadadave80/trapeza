@@ -1,12 +1,23 @@
-type Weights = { usdc: number; eurc: number; cirbtc: number };
+type Weights = { usdc: number; eurc: number; cirbtc: number; usyc: number };
 
-const TOKENS = ["usdc", "eurc", "cirbtc"] as const;
-const LABEL = { usdc: "USDC", eurc: "EURC", cirbtc: "cirBTC" } as const;
-const HINT = { usdc: "cash · gas", eurc: "safe-FX", cirbtc: "risk" } as const;
+const TOKENS = ["usdc", "usyc", "eurc", "cirbtc"] as const;
+const LABEL = {
+  usdc: "USDC",
+  usyc: "USYC",
+  eurc: "EURC",
+  cirbtc: "cirBTC",
+} as const;
+const HINT = {
+  usdc: "cash · gas",
+  usyc: "yield · ~10% APY",
+  eurc: "safe-FX",
+  cirbtc: "risk",
+} as const;
 
 // Per-token fill color + whether that fill is "dark" (label needs white).
 const FILL = {
   usdc: { bg: "#000000", labelOnFill: "#FFFFFF" },
+  usyc: { bg: "#FFEE00", labelOnFill: "#000000" },
   eurc: { bg: "#000000", labelOnFill: "#FFFFFF" },
   cirbtc: { bg: "#00FF66", labelOnFill: "#000000" },
 } as const;
@@ -89,7 +100,12 @@ export function AllocationBar({
 }
 
 function normalize(w: Weights): Weights {
-  const sum = w.usdc + w.eurc + w.cirbtc;
-  if (sum <= 0) return { usdc: 1, eurc: 0, cirbtc: 0 };
-  return { usdc: w.usdc / sum, eurc: w.eurc / sum, cirbtc: w.cirbtc / sum };
+  const sum = w.usdc + w.eurc + w.cirbtc + w.usyc;
+  if (sum <= 0) return { usdc: 1, eurc: 0, cirbtc: 0, usyc: 0 };
+  return {
+    usdc: w.usdc / sum,
+    eurc: w.eurc / sum,
+    cirbtc: w.cirbtc / sum,
+    usyc: w.usyc / sum,
+  };
 }
