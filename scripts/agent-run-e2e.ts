@@ -54,35 +54,9 @@ if ("skipped" in result && result.skipped) {
   process.exit(0);
 }
 
-const r = result as Extract<typeof result, { regime: unknown }>;
-console.error(`regime    ${r.regime.regime}  (conf ${r.regime.confidence}, shift ${r.regime.regime_shift_candidate})`);
-console.error(`brief     ${r.regime.brief}`);
-console.error("");
-console.error(`target    USDC ${(r.decision.target_weights.usdc * 100).toFixed(1)}%  EURC ${(r.decision.target_weights.eurc * 100).toFixed(1)}%  cirBTC ${(r.decision.target_weights.cirbtc * 100).toFixed(1)}%`);
-console.error(`rebalance_now: ${r.decision.rebalance_now}`);
-console.error(`willRebalance: ${r.plan.willRebalance} (${r.plan.legs.length} leg${r.plan.legs.length === 1 ? "" : "s"})`);
-console.error(`executed:      ${r.executed}${r.partial ? " (partial)" : ""}`);
-console.error("");
-console.error(`reasoning: ${r.decision.reasoning}`);
-console.error("");
-
-if (r.swaps.length > 0) {
-  console.error("SWAPS");
-  console.error("─".repeat(60));
-  for (const s of r.swaps) {
-    console.error(`  ${s.from} → ${s.to}  ${s.amountIn} in  →  ${s.amountOut ?? "(?)"} out  ($${s.amountUsd.toFixed(2)})`);
-    if (s.error) console.error(`    ERROR: ${s.error}`);
-    if (s.txHash) console.error(`    arcscan: ${ARC_DISPLAY.explorerUrl}/tx/${s.txHash}`);
-  }
-  console.error("");
-}
-
-if (r.anchor.ok) {
-  console.error(`trace anchored: ${r.anchor.traceHash}`);
-  console.error(`  circle tx    ${r.anchor.circleTxId}`);
-} else {
-  console.error(`trace NOT anchored: ${r.anchor.reason}`);
-}
-
-console.error(`\ndecision id   ${r.decisionId}\n`);
-console.error(r.executed ? "✓ Agent run completed with executed swaps" : "○ Agent run completed (no swaps)");
+// runForUser's return type is a union of skipped/full shapes that share some
+// fields but not others — TS can't narrow purely on key presence, so we just
+// JSON-dump the result. The structured fields below are exactly the same
+// keys the agent writes to the `decisions` table; cross-reference there for
+// type safety.
+console.log(JSON.stringify(result, null, 2));

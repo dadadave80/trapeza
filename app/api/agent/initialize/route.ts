@@ -41,20 +41,31 @@ export async function POST() {
 
   const goal = row.goal as Goal;
   const band = goalBands[goal];
-  // Mid-band weights: cirbtc midpoint of [min,max], eurc at floor, usdc =
-  // remainder. Then clampToBand in decide() would adjust further if needed,
-  // but since we forceTargetWeights we apply directly.
+  // Mid-band 4-asset seed: cirbtc midpoint, eurc + usyc at their floors,
+  // usdc takes whatever's left (with its own floor as a soft minimum). The
+  // agent's clamp in decide() would adjust further if needed, but since we
+  // forceTargetWeights we apply directly.
   const cirbtc = (band.cirbtc[0] + band.cirbtc[1]) / 2;
   const eurc = band.eurcMin;
-  const usdc = Math.max(0, 1 - cirbtc - eurc);
+  const usyc = band.usycMin;
+  const usdc = Math.max(band.usdcMin, 1 - cirbtc - eurc - usyc);
+  // Normalise in case the floors over-allocate (shouldn't happen for our
+  // current bands, but the math is defensive).
+  const sum = cirbtc + eurc + usyc + usdc;
+  const target = {
+    usdc: usdc / sum,
+    eurc: eurc / sum,
+    cirbtc: cirbtc / sum,
+    usyc: usyc / sum,
+  };
 
   try {
     const result = await runForUser(row as UserCtx, {
       bypassRateLimit: true,
       skipRegime: true,
-      forceTargetWeights: { usdc, eurc, cirbtc },
+      forceTargetWeights: target,
     });
-    return NextResponse.json({ ok: true, target: { usdc, eurc, cirbtc }, result });
+    return NextResponse.json({ ok: true, target, result });
   } catch (err) {
     return NextResponse.json(
       {

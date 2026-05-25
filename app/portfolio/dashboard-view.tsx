@@ -91,15 +91,20 @@ export function DashboardView({
           usdc: balances.totals_usd.usdc / balances.total,
           eurc: balances.totals_usd.eurc / balances.total,
           cirbtc: balances.totals_usd.cirbtc / balances.total,
+          usyc: balances.totals_usd.usyc / balances.total,
         }
-      : { usdc: 1, eurc: 0, cirbtc: 0 };
+      : { usdc: 1, eurc: 0, cirbtc: 0, usyc: 0 };
 
   // Empty wallet → show the "Initialize bands" affordance after fund.
+  // Trigger when the user has USDC but at least one of the non-cash legs
+  // is flat (EURC, cirBTC, or USYC).
   const isFundedButFlat =
     balances !== null &&
     balances.total > 0.5 &&
     balances.usdc > 0.5 &&
-    (balances.eurc < 0.001 || balances.cirbtc < 0.000001) &&
+    (balances.eurc < 0.001 ||
+      balances.cirbtc < 0.000001 ||
+      balances.usyc < 0.001) &&
     !latest;
 
   return (
@@ -629,6 +634,13 @@ function PositionsTable({
       amount: balances?.usdc,
       usd: balances?.totals_usd.usdc,
       target: latest?.target_weights.usdc,
+    },
+    {
+      symbol: "USYC",
+      hint: "yield · ~10% APY",
+      amount: balances?.usyc,
+      usd: balances?.totals_usd.usyc,
+      target: latest?.target_weights.usyc,
     },
     {
       symbol: "EURC",
