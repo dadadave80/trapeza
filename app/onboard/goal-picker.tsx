@@ -120,6 +120,14 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
                     <dd className="text-right tabular-nums">
                       {b.eurcMin.toFixed(2)}
                     </dd>
+                    <dt className="opacity-70">USYC ≥</dt>
+                    <dd className="text-right tabular-nums">
+                      {b.usycMin.toFixed(2)}
+                    </dd>
+                    <dt className="opacity-70">USDC ≥</dt>
+                    <dd className="text-right tabular-nums">
+                      {b.usdcMin.toFixed(2)}
+                    </dd>
                   </dl>
                 </button>
               );

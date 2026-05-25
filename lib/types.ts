@@ -2,27 +2,45 @@ import { z } from "zod";
 
 export type Goal = "conservative" | "balanced" | "aggressive";
 
+// Four-asset basket. usdc = cash + gas reserve; usyc = yield-bearing wrapped
+// USDC (~10% APY via the MockUSYC vault); eurc = safe-FX diversification;
+// cirbtc = the risk leg. Bands constrain cirbtc to a range, with floors on
+// eurc, usyc, and usdc; whatever's left after the floors + cirbtc lands in
+// USDC (the "free" cash that the agent leaves for gas + tactical slack).
 export const goalBands: Record<
   Goal,
-  { cirbtc: [number, number]; eurcMin: number; label: string; blurb: string }
+  {
+    cirbtc: [number, number];
+    eurcMin: number;
+    usycMin: number;
+    usdcMin: number;
+    label: string;
+    blurb: string;
+  }
 > = {
   conservative: {
-    cirbtc: [0.0, 0.2],
-    eurcMin: 0.3,
+    cirbtc: [0.0, 0.15],
+    eurcMin: 0.2,
+    usycMin: 0.3,
+    usdcMin: 0.05,
     label: "Conservative",
-    blurb: "Mostly USDC, with EURC for diversification and minimal cirBTC.",
+    blurb: "Heavy on USYC yield + EURC diversification. Minimal risk leg.",
   },
   balanced: {
-    cirbtc: [0.2, 0.5],
-    eurcMin: 0.2,
+    cirbtc: [0.2, 0.45],
+    eurcMin: 0.15,
+    usycMin: 0.15,
+    usdcMin: 0.05,
     label: "Balanced",
-    blurb: "A mix of cash, safe-FX, and risk tuned to the regime.",
+    blurb: "Cash, yield, FX, and risk in balance, tuned to the regime.",
   },
   aggressive: {
-    cirbtc: [0.3, 0.7],
-    eurcMin: 0.1,
+    cirbtc: [0.3, 0.65],
+    eurcMin: 0.05,
+    usycMin: 0.05,
+    usdcMin: 0.05,
     label: "Aggressive",
-    blurb: "Leans into cirBTC in risk-on regimes, retreats when vol spikes.",
+    blurb: "Leans into cirBTC. Thin yield + FX sleeves for ballast.",
   },
 };
 
@@ -31,10 +49,12 @@ export const targetWeightsSchema = z
     usdc: z.number().min(0).max(1),
     eurc: z.number().min(0).max(1),
     cirbtc: z.number().min(0).max(1),
+    usyc: z.number().min(0).max(1),
   })
-  .refine((w) => Math.abs(w.usdc + w.eurc + w.cirbtc - 1) < 0.01, {
-    message: "weights must sum to 1.0",
-  });
+  .refine(
+    (w) => Math.abs(w.usdc + w.eurc + w.cirbtc + w.usyc - 1) < 0.01,
+    { message: "weights must sum to 1.0" },
+  );
 export type TargetWeights = z.infer<typeof targetWeightsSchema>;
 
 export const signalsSchema = z.object({
@@ -94,6 +114,7 @@ export type PortfolioRow = {
   usdc_balance: number;
   eurc_balance: number;
   cirbtc_balance: number;
+  usyc_balance: number;
   last_rebalance_at: string | null;
   updated_at: string;
 };

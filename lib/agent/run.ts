@@ -179,6 +179,7 @@ export async function runForUser(u: UserCtx, opts: RunOptions = {}) {
     usdc_balance: balances.usdc,
     eurc_balance: balances.eurc,
     cirbtc_balance: balances.cirbtc,
+    usyc_balance: balances.usyc,
   });
 
   return {
