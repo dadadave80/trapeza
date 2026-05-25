@@ -45,7 +45,7 @@ export function AllocationBar({
           >
             <div>
               <div className="text-base font-bold tracking-tight">{LABEL[k]}</div>
-              <div className="label-sm text-[color:var(--ink-muted)]">{HINT[k]}</div>
+              <div className="label-sm text-[color:var(--muted)]">{HINT[k]}</div>
             </div>
             <div className="relative h-9 border-2 border-black bg-white">
               {targetPct !== undefined ? (

@@ -52,23 +52,16 @@
 }
 
 :root {
-  /* Warm light grey "paper" instead of pure white — reads as a cured
-   * agora wax-tablet rather than a sterile screen. The acid + black still
-   * sing against it. The reactive grain canvas overlays on top of this. */
-  --paper: #ededea;
-  --paper-soft: #f5f4f1;   /* used by elevated surfaces (cards) */
+  --paper: #ffffff;
   --ink: #000000;
-  /* Muted text colour — readable on warm-grey paper (~6.5:1 vs --paper).
-   * Distinct name from --muted-soft (bg tint) to avoid colliding with the
-   * shadcn --muted token re-mapping further down. */
-  --ink-muted: #54534f;
   --acid: #00ff66;
   --acid-soft: #c4ffd9;
   --red: #ff0044;
   --red-soft: #ffd6df;
   --yellow: #ffee00;
   --yellow-soft: #fff6a3;
-  --muted-soft: #d8d6d1;     /* bg tint for recessed surfaces */
+  --muted: #6a6a6a;
+  --muted-soft: #ededed;
 
   --background: var(--paper);
   --foreground: var(--ink);
@@ -107,17 +100,16 @@
 }
 
 .dark {
-  /* Same palette inverted — near-black warm ink, white type, same acid accent. */
-  --paper: #0e0e0c;
-  --paper-soft: #16161a;
+  /* Same palette inverted — black paper, white ink, same acid accent. */
+  --paper: #000000;
   --ink: #ffffff;
-  --ink-muted: #b0afab;       /* readable muted text on near-black */
   --acid: #00ff66;
   --acid-soft: #003314;
   --red: #ff3366;
   --red-soft: #330011;
   --yellow: #ffee00;
   --yellow-soft: #332f00;
+  --muted: #9c9c9c;
   --muted-soft: #1a1a1a;
 
   --background: var(--paper);
@@ -131,7 +123,7 @@
   --secondary: var(--muted-soft);
   --secondary-foreground: var(--ink);
   --muted: var(--muted-soft);
-  --muted-foreground: var(--ink-muted);
+  --muted-foreground: var(--muted);
   --accent: var(--acid);
   --accent-foreground: var(--ink);
   --destructive: var(--red);
@@ -142,7 +134,7 @@
   --chart-2: var(--acid);
   --chart-3: var(--red);
   --chart-4: var(--yellow);
-  --chart-5: var(--ink-muted);
+  --chart-5: var(--muted);
 }
 
 @layer base {
@@ -227,6 +219,6 @@
 
   /* Input that matches the button language. */
   .input-brut {
-    @apply w-full px-4 py-3 border-2 border-black bg-white text-black text-base placeholder:text-[color:var(--ink-muted)] focus:outline-none focus:bg-[color:var(--muted-soft)];
+    @apply w-full px-4 py-3 border-2 border-black bg-white text-black text-base placeholder:text-[color:var(--muted)] focus:outline-none focus:bg-[color:var(--muted-soft)];
   }
 }

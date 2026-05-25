@@ -3,7 +3,7 @@ import { ARC_DISPLAY } from "@/lib/constants";
 
 export default function Home() {
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col bg-white text-black">
       {/* Top strip — same masthead vocabulary as the rest of the app */}
       <header className="border-b-2 border-black">
         <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">

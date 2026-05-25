@@ -336,23 +336,9 @@ export function DashboardView({
         <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
           <div className="col-span-12 lg:col-span-4 lg:border-r lg:border-black py-10 lg:pr-6">
             <div className="label mb-4">06 / Deposit</div>
-            <a
-              href={`${ARC_DISPLAY.explorerUrl}/address/${address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-2 border-black p-3 bg-white inline-block hover:bg-[#fff6a3] transition-colors"
-              aria-label="View this address on arcscan"
-            >
-              <QRCodeSVG
-                value={`${ARC_DISPLAY.explorerUrl}/address/${address}`}
-                size={150}
-                marginSize={0}
-                fgColor="#000000"
-              />
-            </a>
-            <p className="label opacity-70 mt-3">
-              Scan or click → arcscan
-            </p>
+            <div className="border-2 border-black p-3 bg-white inline-block">
+              <QRCodeSVG value={address} size={150} marginSize={0} fgColor="#000000" />
+            </div>
           </div>
           <div className="col-span-12 lg:col-span-8 py-10 lg:pl-6 space-y-4">
             <div className="label">Arc Testnet address</div>
@@ -586,7 +572,7 @@ function PositionsTable({
           >
             <div className="px-4 py-4">
               <div className="text-lg font-bold tracking-tight">{r.symbol}</div>
-              <div className="label-sm text-[color:var(--ink-muted)]">{r.hint}</div>
+              <div className="label-sm text-[color:var(--muted)]">{r.hint}</div>
             </div>
             <div className="px-4 py-4 border-l border-black text-right ledger text-sm tabular-nums">
               {loading ? "…" : r.amount !== undefined ? r.amount.toLocaleString(undefined, { maximumFractionDigits: 6 }) : "—"}
@@ -608,7 +594,7 @@ function PositionsTable({
             <div className="flex items-baseline justify-between gap-3">
               <div>
                 <div className="text-lg font-bold tracking-tight">{r.symbol}</div>
-                <div className="label-sm text-[color:var(--ink-muted)]">{r.hint}</div>
+                <div className="label-sm text-[color:var(--muted)]">{r.hint}</div>
               </div>
               <div className="text-right">
                 <div className="text-base font-bold tabular-nums">
