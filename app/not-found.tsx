@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div className="flex-1 flex flex-col bg-white text-black">
+    <div className="flex-1 flex flex-col">
       <header className="border-b-2 border-black">
         <div className="mx-auto max-w-[1280px] px-6 py-3 label-lg">
           <Link href="/" className="flex items-baseline gap-2">

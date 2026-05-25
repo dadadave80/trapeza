@@ -53,7 +53,7 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
           <div className="label py-5 border-b border-black flex items-baseline justify-between gap-3 flex-wrap">
             <span>Pick one · weights live inside these bands</span>
             {!selected ? (
-              <span className="text-[color:var(--muted)]">
+              <span className="text-[color:var(--ink-muted)]">
                 ▢ no selection yet
               </span>
             ) : null}
