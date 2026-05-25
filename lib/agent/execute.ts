@@ -1,6 +1,6 @@
-import { AppKit } from "@circle-fin/app-kit";
-import { createCircleWalletsAdapter } from "@circle-fin/adapter-circle-wallets";
-import { APPKIT_ARC_CHAIN, REBALANCE_THRESHOLD } from "@/lib/constants";
+import { parseUnits } from "viem";
+import { circleClient } from "@/lib/circle/wallets";
+import { ARC, REBALANCE_THRESHOLD } from "@/lib/constants";
 import type { TargetWeights } from "@/lib/types";
 import type { TokenBalances } from "@/lib/arc/balances";
 
@@ -13,12 +13,18 @@ const SYMBOL: Record<AssetKey, TokenSymbol> = {
   cirbtc: "cirBTC",
 };
 
-// Decimals for human-readable amountIn strings. cirBTC has more precision.
+// All three hackathon mocks are 6dp — see lib/constants.ts.
 const TOKEN_DECIMALS: Record<AssetKey, number> = {
   usdc: 6,
   eurc: 6,
-  cirbtc: 8,
+  cirbtc: 6,
 };
+
+// Standard burn address. We use transfer-to-sink instead of a real burn
+// because the Solady mocks don't expose a public burn — but the effect on the
+// rebalance loop (source balance decreases, total supply effectively shrinks)
+// is the same.
+const SINK_ADDRESS = "0x000000000000000000000000000000000000dEaD" as const;
 
 // Delta is denominated in USD now (was raw token units before — wrong for
 // cirBTC at $60k+/unit). Conversion to per-token amountIn happens at swap
@@ -39,24 +45,6 @@ export type ExecutionResult = {
   swaps: SwapAttempt[];
   executed: boolean;
 };
-
-let _kit: AppKit | null = null;
-function kit() {
-  if (_kit) return _kit;
-  _kit = new AppKit();
-  return _kit;
-}
-
-let _adapter: ReturnType<typeof createCircleWalletsAdapter> | null = null;
-function adapter() {
-  if (_adapter) return _adapter;
-  const apiKey = process.env.CIRCLE_API_KEY;
-  const entitySecret = process.env.CIRCLE_ENTITY_SECRET;
-  if (!apiKey) throw new Error("Missing CIRCLE_API_KEY");
-  if (!entitySecret) throw new Error("Missing CIRCLE_ENTITY_SECRET");
-  _adapter = createCircleWalletsAdapter({ apiKey, entitySecret });
-  return _adapter;
-}
 
 // Plan the swap legs to reach `target` weights from `current` USD-priced
 // balances. Drift is measured in USD as a fraction of total USD value.
@@ -83,20 +71,15 @@ export function planRebalance(
 }
 
 // Route each negative-delta leg into the largest positive-delta sink. For a
-// 3-asset basket this collapses to at most 2 swaps. `amountIn` is the
-// human-readable amount in tokenIn units, computed by converting USD delta
-// → tokenIn units via the price snapshot on `balances`.
+// 3-asset basket this collapses to at most 2 swaps. Each swap is two on-chain
+// txs against the hackathon mocks: transfer-to-sink on the source, then mint
+// on the destination, both signed by the user's Circle DCW wallet.
 export async function executeRebalance(args: {
   walletId: string;
   walletAddress: `0x${string}`;
   legs: Leg[];
   balances: TokenBalances;
 }): Promise<ExecutionResult> {
-  const kitKey = process.env.KIT_KEY;
-  if (!kitKey) {
-    return { swaps: [], executed: false };
-  }
-
   // Skip negligible deltas (< $0.50 either way) — not worth the gas.
   const MIN_USD = 0.5;
   const sources = args.legs
@@ -107,28 +90,30 @@ export async function executeRebalance(args: {
     .sort((a, b) => b.deltaUsd - a.deltaUsd);
 
   const swaps: SwapAttempt[] = [];
-  const k = kit();
-  const a = adapter();
 
   for (const src of sources) {
     let remainingUsd = -src.deltaUsd;
     for (const sink of sinks) {
       if (sink.deltaUsd <= 0 || remainingUsd <= 0) continue;
       const amountUsd = Math.min(remainingUsd, sink.deltaUsd);
-      // Convert USD → tokenIn units using the price snapshot.
+
       const srcPrice = args.balances.prices[src.token];
-      if (!srcPrice || srcPrice <= 0) {
+      const sinkPrice = args.balances.prices[sink.token];
+      if (!srcPrice || srcPrice <= 0 || !sinkPrice || sinkPrice <= 0) {
         swaps.push({
           from: src.token,
           to: sink.token,
           amountIn: "0",
           amountUsd,
-          error: `no USD price for ${src.token}`,
+          error: `missing USD price (src=${srcPrice}, sink=${sinkPrice})`,
         });
         return { swaps, executed: false };
       }
-      const amountTokens = amountUsd / srcPrice;
-      const amountIn = amountTokens.toFixed(TOKEN_DECIMALS[src.token]);
+
+      const amountInTokens = amountUsd / srcPrice;
+      const amountOutTokens = amountUsd / sinkPrice;
+      const amountIn = amountInTokens.toFixed(TOKEN_DECIMALS[src.token]);
+      const amountOut = amountOutTokens.toFixed(TOKEN_DECIMALS[sink.token]);
 
       const attempt: SwapAttempt = {
         from: src.token,
@@ -138,16 +123,13 @@ export async function executeRebalance(args: {
       };
 
       try {
-        const result = await k.swap({
-          from: {
-            adapter: a,
-            chain: APPKIT_ARC_CHAIN,
-            address: args.walletAddress,
-          },
-          tokenIn: SYMBOL[src.token],
-          tokenOut: SYMBOL[sink.token],
+        const result = await mockSwap({
+          walletId: args.walletId,
+          walletAddress: args.walletAddress,
+          tokenIn: src.token,
+          tokenOut: sink.token,
           amountIn,
-          config: { kitKey },
+          amountOut,
         });
         attempt.txHash = result.txHash;
         attempt.amountOut = result.amountOut;
@@ -164,6 +146,126 @@ export async function executeRebalance(args: {
   }
 
   return { swaps, executed: swaps.length > 0 && swaps.every((s) => s.txHash) };
+}
+
+// One-leg "swap" against the hackathon mocks. Two implementations: when
+// ARC_MOCKSWAP_ADDRESS is set the agent routes through the MockSwap router
+// (one tx per leg + a clean Swapped event); otherwise it falls back to the
+// transfer-to-sink + mint pattern (two txs per leg, no rich event). Both
+// trust the caller's `amountOut` — typically derived from the same CoinGecko
+// snapshot the decision was made on, so the rebalance stays self-consistent.
+//
+// Returns the *destination* tx's on-chain hash because that's the
+// user-visible balance change and the one worth linking on arcscan.
+async function mockSwap(args: {
+  walletId: string;
+  walletAddress: `0x${string}`;
+  tokenIn: AssetKey;
+  tokenOut: AssetKey;
+  amountIn: string;
+  amountOut: string;
+}): Promise<{ txHash: string; amountOut: string }> {
+  const tokenInAddr = TOKEN_ADDR[args.tokenIn]();
+  const tokenOutAddr = TOKEN_ADDR[args.tokenOut]();
+
+  const amountInRaw = parseUnits(args.amountIn, TOKEN_DECIMALS[args.tokenIn]);
+  const amountOutRaw = parseUnits(args.amountOut, TOKEN_DECIMALS[args.tokenOut]);
+
+  const dcw = circleClient();
+  const router = ARC.mockSwap();
+
+  if (router) {
+    // Router path. Approve the router for amountIn, then call swap which
+    // pulls source via transferFrom, mints destination, and emits Swapped.
+    const approveRes = await dcw.createContractExecutionTransaction({
+      walletId: args.walletId,
+      contractAddress: tokenInAddr,
+      abiFunctionSignature: "approve(address,uint256)",
+      abiParameters: [router, amountInRaw.toString()],
+      fee: { type: "level", config: { feeLevel: "MEDIUM" } },
+      idempotencyKey: crypto.randomUUID(),
+    });
+    const approveTxId = approveRes.data?.id;
+    if (!approveTxId) throw new Error(`approve(${SYMBOL[args.tokenIn]}) returned no tx id`);
+    await waitForCircleTx(approveTxId);
+
+    const swapRes = await dcw.createContractExecutionTransaction({
+      walletId: args.walletId,
+      contractAddress: router,
+      abiFunctionSignature: "swap(address,address,uint256,uint256)",
+      abiParameters: [
+        tokenInAddr,
+        tokenOutAddr,
+        amountInRaw.toString(),
+        amountOutRaw.toString(),
+      ],
+      fee: { type: "level", config: { feeLevel: "MEDIUM" } },
+      idempotencyKey: crypto.randomUUID(),
+    });
+    const swapTxId = swapRes.data?.id;
+    if (!swapTxId) throw new Error(`router.swap returned no tx id`);
+    const swapHash = await waitForCircleTx(swapTxId);
+    return { txHash: swapHash, amountOut: args.amountOut };
+  }
+
+  // Fallback path (no router deployed): burn-by-transfer + open mint.
+  const burnRes = await dcw.createContractExecutionTransaction({
+    walletId: args.walletId,
+    contractAddress: tokenInAddr,
+    abiFunctionSignature: "transfer(address,uint256)",
+    abiParameters: [SINK_ADDRESS, amountInRaw.toString()],
+    fee: { type: "level", config: { feeLevel: "MEDIUM" } },
+    idempotencyKey: crypto.randomUUID(),
+  });
+  const burnTxId = burnRes.data?.id;
+  if (!burnTxId) throw new Error(`burn(${SYMBOL[args.tokenIn]}) returned no tx id`);
+  await waitForCircleTx(burnTxId);
+
+  const mintRes = await dcw.createContractExecutionTransaction({
+    walletId: args.walletId,
+    contractAddress: tokenOutAddr,
+    abiFunctionSignature: "mint(address,uint256)",
+    abiParameters: [args.walletAddress, amountOutRaw.toString()],
+    fee: { type: "level", config: { feeLevel: "MEDIUM" } },
+    idempotencyKey: crypto.randomUUID(),
+  });
+  const mintTxId = mintRes.data?.id;
+  if (!mintTxId) throw new Error(`mint(${SYMBOL[args.tokenOut]}) returned no tx id`);
+  const mintHash = await waitForCircleTx(mintTxId);
+
+  return { txHash: mintHash, amountOut: args.amountOut };
+}
+
+const TOKEN_ADDR: Record<AssetKey, () => `0x${string}`> = {
+  usdc: () => ARC.usdc(),
+  eurc: () => ARC.eurc(),
+  cirbtc: () => ARC.cirbtc(),
+};
+
+// Poll Circle's transaction state until the tx reaches a terminal state. On
+// COMPLETE we return the on-chain txHash so callers can link arcscan. On
+// FAILED/DENIED/CANCELLED we throw. Long-polls up to ~60s — well under the
+// 120s function timeout on /api/agent/run.
+const POLL_INTERVAL_MS = 1_500;
+const MAX_POLLS = 40; // 40 × 1.5s = 60s
+
+async function waitForCircleTx(circleTxId: string): Promise<string> {
+  const dcw = circleClient();
+  for (let i = 0; i < MAX_POLLS; i++) {
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+    const res = await dcw.getTransaction({ id: circleTxId });
+    const tx = res.data?.transaction;
+    const state = tx?.state;
+    if (state === "COMPLETE") {
+      const hash = tx?.txHash;
+      if (!hash) throw new Error(`tx ${circleTxId} COMPLETE without txHash`);
+      return hash;
+    }
+    if (state === "FAILED" || state === "DENIED" || state === "CANCELLED") {
+      throw new Error(`tx ${circleTxId} ended in ${state}`);
+    }
+  }
+  throw new Error(`tx ${circleTxId} did not confirm within ${MAX_POLLS * POLL_INTERVAL_MS}ms`);
 }
 
 // Weights are USD-fraction of total now (was raw-unit fraction before —

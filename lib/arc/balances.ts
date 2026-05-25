@@ -27,40 +27,15 @@ export type TokenBalances = {
 // math uses `totals_usd`; the dashboard shows both for transparency.
 export async function readBalances(address: `0x${string}`): Promise<TokenBalances> {
   const client = publicArc();
-  const usdcAddr = ARC.usdc();
-  const eurcAddr = ARC.eurc();
-  const cirbtcAddr = ARC.cirbtc();
-
-  const balanceCalls: Promise<bigint>[] = [
-    client.readContract({
-      address: usdcAddr,
-      abi: erc20Abi,
-      functionName: "balanceOf",
-      args: [address],
-    }),
-    client.readContract({
-      address: eurcAddr,
-      abi: erc20Abi,
-      functionName: "balanceOf",
-      args: [address],
-    }),
+  const tokens = [
+    { address: ARC.usdc(), abi: erc20Abi, functionName: "balanceOf", args: [address] } as const,
+    { address: ARC.eurc(), abi: erc20Abi, functionName: "balanceOf", args: [address] } as const,
+    { address: ARC.cirbtc(), abi: erc20Abi, functionName: "balanceOf", args: [address] } as const,
   ];
-  if (cirbtcAddr) {
-    balanceCalls.push(
-      client.readContract({
-        address: cirbtcAddr,
-        abi: erc20Abi,
-        functionName: "balanceOf",
-        args: [address],
-      }),
-    );
-  } else {
-    balanceCalls.push(Promise.resolve(0n));
-  }
 
   // Balances + prices in parallel.
   const [[usdcRaw, eurcRaw, cirbtcRaw], priceRes] = await Promise.all([
-    Promise.all(balanceCalls),
+    Promise.all(tokens.map((t) => client.readContract(t))),
     getPrices(),
   ]);
 
