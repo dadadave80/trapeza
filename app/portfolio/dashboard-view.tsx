@@ -50,6 +50,8 @@ export type DashboardViewProps = {
   onInitializeBands?: () => void;
   onLoadMore?: () => void;
   onCopyAddress?: () => void;
+  onMintToken?: (token: "usdc" | "eurc" | "cirbtc") => void;
+  minting?: "usdc" | "eurc" | "cirbtc" | null;
   // Suppresses the entire mandate switcher + sign-out (demo mode)
   readOnly?: boolean;
   // Optional banner above the masthead — used for demo/preview overlays
@@ -75,6 +77,8 @@ export function DashboardView({
   onInitializeBands,
   onLoadMore,
   onCopyAddress,
+  onMintToken,
+  minting,
   readOnly,
   banner,
 }: DashboardViewProps) {
@@ -388,13 +392,63 @@ export function DashboardView({
         </div>
       </section>
 
+      {/* ─── TESTNET FAUCET ─────────────────────────────────────────── */}
+      {!readOnly && onMintToken ? (
+        <section className="border-b-2 border-black">
+          <div className="mx-auto max-w-[1280px] px-6 py-10">
+            <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
+              <div className="label">07 / Testnet faucet</div>
+              <div className="label opacity-60">mock tokens · open mint</div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <FaucetButton
+                label="Mint 1,000 USDC"
+                token="usdc"
+                onMint={onMintToken}
+                busy={minting === "usdc"}
+                disabled={minting !== null && minting !== "usdc"}
+              />
+              <FaucetButton
+                label="Mint 1,000 EURC"
+                token="eurc"
+                onMint={onMintToken}
+                busy={minting === "eurc"}
+                disabled={minting !== null && minting !== "eurc"}
+              />
+              <FaucetButton
+                label="Mint 0.0013 cirBTC"
+                token="cirbtc"
+                onMint={onMintToken}
+                busy={minting === "cirbtc"}
+                disabled={minting !== null && minting !== "cirbtc"}
+              />
+            </div>
+            <p className="text-sm opacity-70 leading-relaxed mt-4">
+              Mints land in your Circle wallet in a few seconds via{" "}
+              <code className="ledger normal-case text-xs">mint(address,uint256)</code>{" "}
+              on the hackathon mock tokens. Real Arc tokens don&apos;t support
+              this — use{" "}
+              <a
+                href="https://faucet.circle.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                faucet.circle.com
+              </a>{" "}
+              for those.
+            </p>
+          </div>
+        </section>
+      ) : null}
+
       {/* ─── HISTORY ────────────────────────────────────────────────── */}
       {decisions.length > 1 ? (
         <section className="border-b-2 border-black">
           <div className="mx-auto max-w-[1280px] px-6 py-10">
             <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
               <div className="label">
-                07 / History · {decisions.length - 1} prior {decisions.length - 1 === 1 ? "decision" : "decisions"}
+                08 / History · {decisions.length - 1} prior {decisions.length - 1 === 1 ? "decision" : "decisions"}
               </div>
               <div className="label opacity-60">click any row →</div>
             </div>
@@ -483,6 +537,31 @@ export function DashboardView({
         </div>
       </footer>
     </div>
+  );
+}
+
+function FaucetButton({
+  label,
+  token,
+  onMint,
+  busy,
+  disabled,
+}: {
+  label: string;
+  token: "usdc" | "eurc" | "cirbtc";
+  onMint: (token: "usdc" | "eurc" | "cirbtc") => void;
+  busy: boolean;
+  disabled: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onMint(token)}
+      disabled={busy || disabled}
+      className="btn !text-sm !py-4"
+    >
+      {busy ? "▶ Minting…" : `▶ ${label}`}
+    </button>
   );
 }
 

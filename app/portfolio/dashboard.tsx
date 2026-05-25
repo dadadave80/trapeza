@@ -46,6 +46,7 @@ export function Dashboard({ address, goal, email, lastCheckedAt }: Props) {
   const [initializing, setInitializing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [minting, setMinting] = useState<"usdc" | "eurc" | "cirbtc" | null>(null);
 
   // Idle counter: increments each time a poll returns identical balances.
   // Used to dial back polling cadence when nothing's changing.
@@ -198,6 +199,33 @@ export function Dashboard({ address, goal, email, lastCheckedAt }: Props) {
     }
   }
 
+  async function onMintToken(token: "usdc" | "eurc" | "cirbtc") {
+    setMinting(token);
+    try {
+      const res = await fetch("/api/faucet", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        toast.error(body?.details || body?.error || `HTTP ${res.status}`);
+        return;
+      }
+      toast.success(
+        `Mint sent · circle tx ${String(body.circleTxId).slice(0, 8)}…`,
+      );
+      // Faucet mints land in seconds — kick the poller into active cadence so
+      // the balance row updates without the user having to refresh.
+      idleCountRef.current = 0;
+      setTimeout(() => refresh(), 2500);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setMinting(null);
+    }
+  }
+
   async function onCopyAddress() {
     try {
       await navigator.clipboard.writeText(address);
@@ -228,6 +256,8 @@ export function Dashboard({ address, goal, email, lastCheckedAt }: Props) {
     onInitializeBands,
     onLoadMore,
     onCopyAddress,
+    onMintToken,
+    minting,
   };
 
   // Suppress unused warnings — TargetWeights is referenced in the type signature
