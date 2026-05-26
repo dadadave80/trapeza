@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { EmailForm } from "./email-form";
-import { ARC_DISPLAY } from "@/lib/constants";
 import { SessionGate } from "./session-gate";
 
 // Statically prerendered for instant first-paint. The unauthed view (the
@@ -8,29 +7,41 @@ import { SessionGate } from "./session-gate";
 // here without any Supabase call. <SessionGate /> mounts client-side,
 // checks auth, and either redirects to /portfolio (wallet exists), swaps
 // in the goal picker (authed but no wallet), or stays as-is (unauthed).
-//
-// This avoids the 1-2s server-side getUser() round-trip on every cold-load
-// of /onboard — a brutal tax on the landing-page → onboard click path.
 
 export const metadata = {
-  title: "Sign in",
+  title: "Login",
 };
 
 export default function OnboardPage() {
   return (
     <div className="flex-1 flex flex-col">
-      <header className="border-b-2 border-black">
-        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
+      <header
+        className="border-b border-dashed"
+        style={{ borderColor: "var(--green-dim)" }}
+      >
+        <div className="mx-auto max-w-[1180px] px-5 py-3 grid grid-cols-[1fr_auto] items-center gap-4">
           <Link
             href="/"
-            className="col-span-4 sm:col-span-3 border-r border-black py-3 label-lg flex items-center"
+            className="flex items-baseline gap-4 min-w-0"
+            aria-label="Back to terminal home"
           >
-            <span className="text-base font-bold tracking-tight">Trapeza</span>
-            <span className="ml-2 hidden sm:inline opacity-60">▍ Treasury OS</span>
+            <span
+              className="text-base font-bold tracking-[0.3em]"
+              style={{ color: "var(--amber)" }}
+            >
+              TRAPEZA·TERM
+            </span>
+            <span className="text-[11px] text-[color:var(--green-dim)] truncate hidden sm:inline">
+              v0.5.0 · ARC-TESTNET · 5042002
+            </span>
           </Link>
-          <div className="col-span-8 sm:col-span-9 py-3 flex items-center justify-end label">
-            {ARC_DISPLAY.name} ▶ {ARC_DISPLAY.chainId}
-          </div>
+          <Link
+            href="/"
+            className="text-[11px] tracking-[0.25em] uppercase hover:text-[color:var(--green)]"
+            style={{ color: "var(--green-dim)" }}
+          >
+            [← HOME]
+          </Link>
         </div>
       </header>
 
@@ -43,37 +54,60 @@ export default function OnboardPage() {
 
 function UnauthedView() {
   return (
-    <section className="border-b-2 border-black">
-      <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
-        <div className="col-span-12 lg:col-span-7 lg:border-r lg:border-black py-8 lg:py-24 lg:pr-6 order-2 lg:order-1">
-          <div className="label mb-3 lg:mb-4">Step I / II · Sign in</div>
+    <section
+      className="border-b border-dashed"
+      style={{ borderColor: "var(--green-dim)" }}
+    >
+      <div className="mx-auto max-w-[1180px] px-5 py-10 lg:py-16 grid grid-cols-12 gap-6">
+        <div className="col-span-12 lg:col-span-7 order-2 lg:order-1">
+          <p className="section-marker mb-3">[STEP I / II] · LOGIN</p>
           <h1
-            className="font-bold tracking-[-0.04em] leading-[0.9]"
-            style={{ fontSize: "clamp(36px, 9vw, 128px)" }}
+            className="font-bold tracking-[-0.02em] leading-[0.92]"
+            style={{
+              fontSize: "clamp(36px, 8vw, 88px)",
+              color: "var(--white)",
+            }}
           >
-            Open an account
+            <span style={{ color: "var(--green-dim)" }}>&gt; </span>
+            OPEN AN ACCOUNT
             <br />
-            at the
+            AT THE{" "}
             <span
-              className="inline-block px-3 ml-3"
-              style={{ background: "#00FF66" }}
+              className="inline-block px-2"
+              style={{
+                background: "var(--green)",
+                color: "var(--bg)",
+              }}
             >
-              agora&apos;s
+              AGORA&apos;S
             </span>
             <br />
-            table.
+            TABLE.
+            <span className="cursor-blink" aria-hidden />
           </h1>
-          <p className="mt-6 lg:mt-8 max-w-xl text-base lg:text-[17px] leading-relaxed">
-            A magic link arrives by email — no password, no seed phrase. We
-            mint your Circle wallet the moment you pick a goal.
+          <p
+            className="mt-6 max-w-xl text-[14px] leading-relaxed"
+            style={{ color: "var(--white)" }}
+          >
+            <span style={{ color: "var(--green)" }}>&gt;</span> A magic link
+            arrives by email — no password, no seed phrase. The Circle wallet
+            is minted the moment you pick a mandate.
           </p>
         </div>
 
-        <div className="col-span-12 lg:col-span-5 py-10 lg:py-24 lg:pl-6 order-1 lg:order-2 border-b border-black lg:border-b-0">
-          <div className="label mb-4 lg:mb-5">Magic link</div>
-          <EmailForm />
-          <p className="mt-6 label opacity-60 leading-relaxed">
-            No password storage. Session cookie clears when you close the tab.
+        <div className="col-span-12 lg:col-span-5 order-1 lg:order-2">
+          <p className="section-marker mb-3">MAGIC·LINK</p>
+          <div
+            className="border p-4"
+            style={{
+              borderColor: "var(--green-dim)",
+              background: "var(--bg-soft)",
+            }}
+          >
+            <EmailForm />
+          </div>
+          <p className="mt-3 label">
+            NO PASSWORD STORAGE · SESSION CLEARS ON TAB CLOSE
           </p>
         </div>
       </div>

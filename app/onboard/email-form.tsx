@@ -33,7 +33,7 @@ export function EmailForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-3">
       <label htmlFor="email" className="block label">
-        Email
+        EMAIL
       </label>
       <input
         id="email"
@@ -43,10 +43,14 @@ export function EmailForm() {
         placeholder="you@somewhere.dev"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="input-brut ledger"
+        className="input-brut"
       />
-      <button type="submit" disabled={sending} className="btn-inverse w-full !py-4">
-        {sending ? "▶ Sending…" : "▶ Send magic link"}
+      <button
+        type="submit"
+        disabled={sending}
+        className="btn-acid w-full !text-[12px] !py-3"
+      >
+        {sending ? "[SENDING…]" : "[SEND MAGIC LINK ↗]"}
       </button>
     </form>
   );

@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
-import { GrainField } from "@/components/grain-field";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
+const mono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
 });
@@ -19,24 +13,24 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://trapeza-gamma.vercel.app",
   ),
   title: {
-    default: "Trapeza — Treasury OS",
-    template: "%s · Trapeza",
+    default: "TRAPEZA·TERM",
+    template: "%s · TRAPEZA·TERM",
   },
   description:
-    "The money-changer's table, run by an agent. A Groq-powered portfolio agent that rebalances USDC, EURC, and cirBTC on Arc Testnet by market regime — with every decision pinned onchain.",
+    "Trapeza terminal. A Groq-hosted portfolio agent for USDC, USYC, EURC, and cirBTC on Arc Testnet — every decision pinned onchain.",
   openGraph: {
-    title: "Trapeza · the money-changer's table, run by an agent",
+    title: "TRAPEZA·TERM",
     description:
-      "Pick a risk profile, deposit USDC, and a Groq-hosted agent rebalances every 15 minutes on Arc Testnet — pinning a sha256 of its reasoning onchain.",
+      "Pick a mandate, fund the wallet, an agent rebalances every 15 minutes on Arc Testnet — hashing its reasoning into a TraceAnchor contract.",
     type: "website",
     url: "/",
     siteName: "Trapeza",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Trapeza · the money-changer's table, run by an agent",
+    title: "TRAPEZA·TERM",
     description:
-      "Adaptive portfolio agent on Arc. Real onchain swaps. Reasoning hash-pinned for the audit.",
+      "Adaptive portfolio agent on Arc Testnet. Phosphor-green CRT UI. Onchain reasoning anchor.",
   },
 };
 
@@ -48,31 +42,30 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${mono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground selection:bg-[#00FF66] selection:text-black">
-        <GrainField />
-        {/* Content sits above the grain canvas (z-0). The hard-bordered
-            cards and tables retain their solid surfaces so readability
-            is unaffected; the grain reads through gaps and the body bg. */}
-        <div className="relative z-10 flex-1 flex flex-col">{children}</div>
+      <body className="min-h-full flex flex-col">
+        {children}
         <Toaster
-          theme="light"
+          theme="dark"
           position="bottom-right"
           toastOptions={{
             classNames: {
               toast:
-                "!rounded-none !border-2 !border-black !bg-white !text-black !font-sans !uppercase !tracking-[0.15em] !text-[11px] !font-bold !shadow-none !p-4",
-              title: "!text-black !font-bold",
-              description: "!text-black/70 !normal-case !tracking-normal !text-[11px] !font-normal !mt-1",
+                "!rounded-none !border !border-[color:var(--green-dim)] !bg-[color:var(--bg-soft)] !text-[color:var(--green)] !font-mono !uppercase !tracking-[0.25em] !text-[11px] !font-normal !shadow-none !p-3",
+              title: "!text-[color:var(--white)]",
+              description:
+                "!text-[color:var(--green-dim)] !normal-case !tracking-normal !text-[11px] !mt-1",
               actionButton:
-                "!rounded-none !bg-black !text-white !border-0 !font-bold !uppercase !tracking-[0.15em] !text-[10px]",
+                "!rounded-none !bg-transparent !text-[color:var(--green)] !border !border-[color:var(--green)] !uppercase !tracking-[0.25em] !text-[10px]",
               cancelButton:
-                "!rounded-none !bg-white !text-black !border-2 !border-black !font-bold !uppercase !tracking-[0.15em] !text-[10px]",
+                "!rounded-none !bg-transparent !text-[color:var(--green-dim)] !border !border-[color:var(--green-dim)] !uppercase !tracking-[0.25em] !text-[10px]",
               closeButton:
-                "!rounded-none !border-2 !border-black !bg-white !text-black hover:!bg-black hover:!text-white !transition-colors",
-              error: "!bg-[#FF0044] !text-white !border-black",
-              success: "!bg-[#00FF66] !text-black !border-black",
+                "!rounded-none !border !border-[color:var(--green-dim)] !bg-transparent !text-[color:var(--green-dim)] hover:!text-[color:var(--green)] hover:!border-[color:var(--green)] !transition-colors",
+              error:
+                "!bg-[color:var(--bg-soft)] !text-[color:var(--red)] !border-[color:var(--red)]",
+              success:
+                "!bg-[color:var(--bg-soft)] !text-[color:var(--green)] !border-[color:var(--green)]",
             },
           }}
         />
