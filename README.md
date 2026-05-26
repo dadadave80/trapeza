@@ -2,7 +2,7 @@
   <img alt="TRAPEZA·TERM — adaptive portfolio agent on Arc Testnet" src="public/banner.svg" width="100%">
 </p>
 
-# Trapeza
+# Trapeza [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dadadave80/trapeza)
 
 > **Trapeza** (τράπεζα) · Greek for *the table*. The money-changers' tables of the Athenian agora — the original site of capital allocation, and the etymological root of modern banking. *"Money-changers leaned on their tables."* Trapeza is an adaptive portfolio agent that takes its seat at the same table, now powered by an LLM and settled on Arc.
 
