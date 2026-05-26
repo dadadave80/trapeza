@@ -13,6 +13,10 @@ import { ARC_DISPLAY } from "@/lib/constants";
 // actions up via callbacks. /portfolio wraps this with live data + fetches;
 // /demo wraps it with mock data + a banner so judges can browse without
 // signing in.
+//
+// Terminal mode: phosphor-green CRT aesthetic, dashed dividers, ASCII fills,
+// bracketed-uppercase labels. Functional shape unchanged from the previous
+// brutalist version — every prop / handler is preserved.
 
 export type DecisionRow = {
   id: string;
@@ -44,7 +48,6 @@ export type DashboardViewProps = {
   loadingMore: boolean;
   hasMore: boolean;
   error: string | null;
-  // Actions — all optional so /demo can no-op them
   onRefresh?: () => void;
   onRunAgent?: () => void;
   onInitializeBands?: () => void;
@@ -52,9 +55,7 @@ export type DashboardViewProps = {
   onCopyAddress?: () => void;
   onMintToken?: (token: "usdc" | "eurc" | "cirbtc") => void;
   minting?: "usdc" | "eurc" | "cirbtc" | null;
-  // Suppresses the entire mandate switcher + sign-out (demo mode)
   readOnly?: boolean;
-  // Optional banner above the masthead — used for demo/preview overlays
   banner?: React.ReactNode;
 };
 
@@ -95,9 +96,6 @@ export function DashboardView({
         }
       : { usdc: 1, eurc: 0, cirbtc: 0, usyc: 0 };
 
-  // Empty wallet → show the "Initialize bands" affordance after fund.
-  // Trigger when the user has USDC but at least one of the non-cash legs
-  // is flat (EURC, cirBTC, or USYC).
   const isFundedButFlat =
     balances !== null &&
     balances.total > 0.5 &&
@@ -114,29 +112,32 @@ export function DashboardView({
       <Masthead
         email={email}
         mandate={readOnly ? undefined : goal}
-        right={
-          <span className="opacity-60 whitespace-nowrap">
-            Arc · {ARC_DISPLAY.chainId}
-          </span>
-        }
         signOut={!readOnly}
       />
 
-      {/* ─── HERO ───────────────────────────────────────────────────── */}
-      <section className="border-b-2 border-black">
-        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
-          <div className="col-span-12 lg:col-span-8 lg:border-r lg:border-black py-10 lg:pr-6">
-            <div className="label mb-3 flex items-center justify-between gap-3 flex-wrap">
-              <span>01 / Portfolio</span>
-              <span className="opacity-60 normal-case">{band.label} mandate</span>
+      <div className="mx-auto max-w-[1180px] px-5">
+        {/* ─── HERO ─────────────────────────────────────────────── */}
+        <section
+          className="grid grid-cols-12 gap-6 py-6 border-b border-dashed"
+          style={{ borderColor: "var(--green-dim)" }}
+        >
+          <div className="col-span-12 md:col-span-7 space-y-3 min-w-0">
+            <div className="section-marker flex items-center justify-between gap-3 flex-wrap">
+              <span>[01] PORTFOLIO·VALUE</span>
+              <span className="normal-case tracking-normal text-[color:var(--green-dim)]">
+                {band.label.toUpperCase()} MANDATE
+              </span>
             </div>
             {loading ? (
-              <Skeleton heightClass="h-[88px] sm:h-[112px] lg:h-[140px]" />
+              <Skeleton heightClass="h-[80px] sm:h-[100px] lg:h-[120px]" />
             ) : balances ? (
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 max-w-full">
                 <div
-                  className="font-bold tabular-nums leading-[0.9] tracking-[-0.04em] min-w-0"
-                  style={{ fontSize: "clamp(44px, 10vw, 112px)" }}
+                  className="font-bold tabular-nums leading-[0.9] tracking-[-0.02em] min-w-0"
+                  style={{
+                    fontSize: "clamp(40px, 9vw, 96px)",
+                    color: "var(--white)",
+                  }}
                 >
                   ${balances.total.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
@@ -150,403 +151,497 @@ export function DashboardView({
               </div>
             ) : (
               <div
-                className="font-bold tabular-nums leading-[0.9] tracking-[-0.04em] opacity-30"
-                style={{ fontSize: "clamp(44px, 10vw, 112px)" }}
+                className="font-bold tabular-nums leading-[0.9] tracking-[-0.02em] opacity-30"
+                style={{ fontSize: "clamp(40px, 9vw, 96px)" }}
               >
                 $—
               </div>
             )}
-            <div className="grid grid-cols-3 gap-x-4 mt-6 pt-4 border-t border-black">
-              <Datum
-                label="cirBTC oracle"
-                value={balances ? `$${balances.prices.cirbtc.toLocaleString()}` : "—"}
-                loading={loading}
-              />
-              <Datum
-                label="EURC oracle"
-                value={balances ? `$${balances.prices.eurc.toFixed(3)}` : "—"}
-                loading={loading}
-              />
-              <Datum
-                label="Source"
-                value={balances ? balances.price_source.toUpperCase() : "—"}
-                loading={loading}
-              />
+            <div className="text-[11px]" style={{ color: "var(--green-dim)" }}>
+              {balances ? (
+                <>
+                  CIRBTC ${balances.prices.cirbtc.toLocaleString()} · EURC $
+                  {balances.prices.eurc.toFixed(3)} · USYC $
+                  {balances.prices.usyc.toFixed(4)} · SRC{" "}
+                  {balances.price_source.toUpperCase()}
+                </>
+              ) : (
+                "AWAITING ORACLE…"
+              )}
             </div>
           </div>
 
-          <div className="col-span-12 lg:col-span-4 py-10 lg:pl-6 flex flex-col justify-between gap-6">
-            <div>
-              <div className="label mb-3">02 / Regime</div>
-              <RegimeLockup
-                regime={latest?.regime ?? "neutral"}
-                confidence={undefined}
-              />
-              <div className="label mt-3">
-                {latest ? (
-                  <>Last decision · {timeAgo(latest.created_at)}</>
-                ) : lastCheckedAt ? (
-                  <>Agent woke up · {timeAgo(lastCheckedAt)}</>
-                ) : (
-                  <>No agent run yet</>
-                )}
+          <div className="col-span-12 md:col-span-5">
+            <p className="section-marker mb-2">[02] REGIME·INDICATOR</p>
+            <div
+              className="border p-3 flex items-baseline justify-between gap-3 flex-wrap"
+              style={{
+                borderColor: "var(--green-dim)",
+                background: "var(--bg-soft)",
+              }}
+            >
+              <div>
+                <RegimeLockup
+                  regime={latest?.regime ?? "neutral"}
+                  confidence={undefined}
+                />
+                <div className="label mt-2">
+                  {latest ? (
+                    <>LAST DECISION · {timeAgo(latest.created_at)}</>
+                  ) : lastCheckedAt ? (
+                    <>AGENT WOKE UP · {timeAgo(lastCheckedAt)}</>
+                  ) : (
+                    <>NO AGENT RUN YET</>
+                  )}
+                </div>
               </div>
-            </div>
-            {readOnly ? null : (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={onRefresh}
-                  disabled={refreshing}
-                  className="btn flex-1"
-                >
-                  {refreshing ? "▢ Refreshing" : "▢ Refresh"}
-                </button>
-                <button
-                  onClick={onRunAgent}
-                  disabled={running || initializing}
-                  className="btn-acid flex-1"
-                >
-                  {running ? "▶ Running" : "▶ Run agent now"}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── ALLOCATION ─────────────────────────────────────────────── */}
-      <section className="border-b-2 border-black">
-        <div className="mx-auto max-w-[1280px] px-6 py-10">
-          <div className="label mb-6">03 / Allocation · current vs target</div>
-          {loading ? (
-            <Skeleton heightClass="h-32" />
-          ) : (
-            <AllocationBar actual={currentWeights} target={latest?.target_weights} />
-          )}
-        </div>
-      </section>
-
-      {/* ─── INITIALIZE BANDS callout (only when funded-but-flat) ──── */}
-      {isFundedButFlat && !readOnly ? (
-        <section className="border-b-2 border-black" style={{ background: "#FFEE00" }}>
-          <div className="mx-auto max-w-[1280px] px-6 py-6 grid grid-cols-12 gap-x-4 items-center">
-            <div className="col-span-12 lg:col-span-9">
-              <div className="label mb-2">▍ One-time setup</div>
-              <p className="text-base font-medium leading-relaxed">
-                You&apos;ve funded USDC but the agent can&apos;t rebalance into EURC or
-                cirBTC until your wallet holds some of each. Click to seed the
-                mid-band weights for{" "}
-                <span className="font-bold">{band.label}</span>.
-              </p>
-            </div>
-            <div className="col-span-12 lg:col-span-3 mt-3 lg:mt-0 flex justify-end">
-              <button
-                onClick={onInitializeBands}
-                disabled={initializing || running}
-                className="btn-inverse w-full lg:w-auto"
-              >
-                {initializing ? "▶ Seeding…" : "▶ Initialize bands"}
-              </button>
+              {readOnly ? null : (
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={onRunAgent}
+                    disabled={running || initializing}
+                    className="btn-acid btn-sm whitespace-nowrap"
+                  >
+                    {running ? "[RUNNING…]" : "[RUN AGENT NOW]"}
+                  </button>
+                  <button
+                    onClick={onRefresh}
+                    disabled={refreshing}
+                    className="btn btn-sm whitespace-nowrap"
+                  >
+                    {refreshing ? "[REFRESH…]" : "[REFRESH]"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </section>
-      ) : null}
 
-      {/* ─── REASONING ──────────────────────────────────────────────── */}
-      <section className="border-b-2 border-black">
-        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
-          <div className="col-span-12 lg:col-span-3 lg:border-r lg:border-black py-10 lg:pr-6">
-            <div className="label mb-4">04 / Decision</div>
+        {/* ─── ALLOCATION ──────────────────────────────────────── */}
+        <section
+          className="py-6 border-b border-dashed"
+          style={{ borderColor: "var(--green-dim)" }}
+        >
+          <p className="section-marker mb-3">
+            [03] ALLOCATION · CURRENT vs TARGET
+          </p>
+          {loading ? (
+            <Skeleton heightClass="h-32" />
+          ) : (
+            <AllocationBar
+              actual={currentWeights}
+              target={latest?.target_weights}
+            />
+          )}
+        </section>
+
+        {/* ─── INITIALIZE BANDS callout ───────────────────────── */}
+        {isFundedButFlat && !readOnly ? (
+          <section
+            className="py-4 border-b border-dashed"
+            style={{
+              borderColor: "var(--amber)",
+              background: "var(--amber-soft)",
+            }}
+          >
+            <div className="grid grid-cols-12 gap-x-4 items-center">
+              <div className="col-span-12 lg:col-span-9">
+                <div
+                  className="section-marker mb-2"
+                  style={{ color: "var(--amber)" }}
+                >
+                  ▍ ONE-TIME SETUP
+                </div>
+                <p className="text-[13px] leading-relaxed text-[color:var(--white)]">
+                  Wallet holds USDC but no USYC / EURC / cirBTC yet — the agent
+                  can&apos;t rebalance until each leg has a starting balance.
+                  Click to seed the mid-band weights for{" "}
+                  <span style={{ color: "var(--amber)" }}>
+                    {band.label.toUpperCase()}
+                  </span>
+                  .
+                </p>
+              </div>
+              <div className="col-span-12 lg:col-span-3 mt-3 lg:mt-0 flex justify-end">
+                <button
+                  onClick={onInitializeBands}
+                  disabled={initializing || running}
+                  className="btn-inverse btn-sm whitespace-nowrap"
+                >
+                  {initializing ? "[SEEDING…]" : "[INITIALIZE BANDS]"}
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {/* ─── REASONING ───────────────────────────────────────── */}
+        <section
+          className="py-6 border-b border-dashed"
+          style={{ borderColor: "var(--green-dim)" }}
+        >
+          <p className="section-marker mb-3">
+            [04] AGENT·MEMO
             {latest ? (
-              <>
-                <div className="label space-y-1">
-                  <div>{new Date(latest.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</div>
-                  <div>{new Date(latest.created_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</div>
-                </div>
-                <div className="mt-6 flex flex-col gap-2">
-                  <RegimePill regime={latest.regime} size="md" />
-                  <ExecutedBadge executed={latest.executed} partial={latest.partial ?? false} />
-                </div>
-              </>
-            ) : (
-              <div className="label opacity-60">No decisions yet</div>
-            )}
-          </div>
-          <div className="col-span-12 lg:col-span-9 py-10 lg:pl-6 space-y-6">
+              <span style={{ color: "var(--green-dim)" }}>
+                {" · "}
+                {new Date(latest.created_at)
+                  .toISOString()
+                  .slice(0, 16)
+                  .replace("T", " ")}
+                Z
+              </span>
+            ) : null}
+          </p>
+          <div
+            className="border p-4 space-y-4"
+            style={{
+              borderColor: "var(--green-dim)",
+              background: "var(--bg-soft)",
+            }}
+          >
             {loading && !latest ? (
-              <Skeleton heightClass="h-32" />
+              <Skeleton heightClass="h-24" />
             ) : latest ? (
               <>
-                <p className="text-[22px] sm:text-[28px] leading-[1.25] font-medium tracking-tight">
-                  &ldquo;{latest.reasoning}&rdquo;
+                <p
+                  className="text-[14px] leading-[1.6]"
+                  style={{ color: "var(--white)" }}
+                >
+                  <span style={{ color: "var(--green)" }}>&gt;</span>{" "}
+                  {latest.reasoning}
                 </p>
 
                 {latest.alerts?.length ? (
-                  <ul className="border-l-2 border-[color:var(--red)] pl-4 space-y-1">
+                  <ul
+                    className="border-l-2 pl-3 space-y-1"
+                    style={{ borderColor: "var(--red)" }}
+                  >
                     {latest.alerts.map((a, i) => (
-                      <li key={i} className="text-sm" style={{ color: "var(--red)" }}>
-                        ⚠︎ {a}
+                      <li
+                        key={i}
+                        className="text-[12px]"
+                        style={{ color: "var(--red)" }}
+                      >
+                        ⚠ {a}
                       </li>
                     ))}
                   </ul>
                 ) : null}
 
-                <div className="pt-4 border-t border-black grid sm:grid-cols-3 gap-x-4 gap-y-2 label">
+                <div
+                  className="grid sm:grid-cols-[auto_auto_1fr_auto] gap-x-5 gap-y-1.5 items-baseline text-[11px] pt-3 border-t border-dashed"
+                  style={{ borderColor: "var(--green-dim)" }}
+                >
+                  <span
+                    className="flex items-center gap-1.5"
+                    style={{
+                      color: latest.executed
+                        ? "var(--green)"
+                        : latest.partial
+                          ? "var(--amber)"
+                          : "var(--green-dim)",
+                    }}
+                  >
+                    <span aria-hidden>●</span>{" "}
+                    {latest.executed
+                      ? "EXECUTED"
+                      : latest.partial
+                        ? "PARTIAL"
+                        : "PLAN ONLY"}
+                  </span>
                   {latest.arc_tx_hash ? (
                     <a
                       href={`${ARC_DISPLAY.explorerUrl}/tx/${latest.arc_tx_hash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:underline"
+                      className="underline tracking-tight normal-case"
+                      style={{ color: "var(--amber)" }}
                     >
-                      ▶ Swap tx · arcscan
+                      SWAP·TX {latest.arc_tx_hash.slice(0, 8)}…
+                      {latest.arc_tx_hash.slice(-6)}
                     </a>
-                  ) : <span />}
+                  ) : (
+                    <span />
+                  )}
                   {latest.trace_hash ? (
-                    <span className="ledger normal-case tracking-tight text-[10px]" title={latest.trace_hash}>
-                      sha256 {latest.trace_hash.slice(0, 8)}…{latest.trace_hash.slice(-4)}
+                    <span
+                      className="tracking-tight normal-case"
+                      title={latest.trace_hash}
+                      style={{ color: "var(--green-dim)" }}
+                    >
+                      TRACE·SHA256 {latest.trace_hash.slice(0, 10)}…
+                      {latest.trace_hash.slice(-6)}
                     </span>
-                  ) : <span />}
-                  <Link href={`/trace/${latest.id}`} className="hover:underline sm:text-right">
-                    ▶ Full decision detail
+                  ) : (
+                    <span />
+                  )}
+                  <Link
+                    href={`/trace/${latest.id}`}
+                    className="underline sm:text-right uppercase tracking-[0.25em]"
+                    style={{ color: "var(--green)" }}
+                  >
+                    [FULL DECISION →]
                   </Link>
                 </div>
               </>
             ) : (
-              <p className="text-[20px] sm:text-[24px] leading-[1.3] font-medium tracking-tight opacity-70">
-                No decisions on record yet. {readOnly ? "Sign in at /onboard to mint your own wallet and run the agent." : "Fund the wallet below and hit"}
-                {!readOnly && (
-                  <span className="px-2 mx-2 border-2 border-black inline-block label" style={{ background: "#00FF66" }}>
-                    ▶ Run agent now
-                  </span>
-                )}
-                {!readOnly && " — the agent reads the market, decides weights inside your bands, executes the rebalance onchain, and pins the trace."}
+              <p
+                className="text-[14px] leading-[1.6]"
+                style={{ color: "var(--green-dim)" }}
+              >
+                <span style={{ color: "var(--green)" }}>&gt;</span> No decisions
+                on record yet.
+                {readOnly
+                  ? " Sign in at /onboard to mint your own wallet and run the agent."
+                  : " Fund the wallet, hit [RUN AGENT NOW] — the agent reads the market, decides weights inside your bands, executes onchain, and pins the trace."}
               </p>
             )}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── POSITIONS ──────────────────────────────────────────────── */}
-      <section className="border-b-2 border-black">
-        <div className="mx-auto max-w-[1280px] px-6 py-10">
-          <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
-            <div className="label">05 / Positions</div>
+        {/* ─── POSITIONS ───────────────────────────────────────── */}
+        <section
+          className="py-6 border-b border-dashed"
+          style={{ borderColor: "var(--green-dim)" }}
+        >
+          <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
+            <p className="section-marker">
+              [05] POSITIONS · SYM | UNITS | USD | TARGET
+            </p>
             {error ? (
-              <div className="label" style={{ color: "var(--red)" }}>
-                Error: {error}
-              </div>
+              <span className="label" style={{ color: "var(--red)" }}>
+                ERROR: {error}
+              </span>
             ) : balances ? (
-              <div className="label opacity-60">
-                Fetched {new Date(balances.fetched_at).toLocaleTimeString()}
-              </div>
+              <span className="label">
+                FETCHED {new Date(balances.fetched_at)
+                  .toISOString()
+                  .slice(11, 19)}
+                Z
+              </span>
             ) : null}
           </div>
-          <PositionsTable balances={balances} latest={latest} loading={loading && !balances} />
-        </div>
-      </section>
+          <PositionsTable
+            balances={balances}
+            latest={latest}
+            loading={loading && !balances}
+          />
+        </section>
 
-      {/* ─── DEPOSIT ────────────────────────────────────────────────── */}
-      <section className="border-b-2 border-black">
-        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
-          <div className="col-span-12 lg:col-span-4 lg:border-r lg:border-black py-10 lg:pr-6">
-            <div className="label mb-4">06 / Deposit</div>
-            <a
-              href={`${ARC_DISPLAY.explorerUrl}/address/${address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-2 border-black p-3 bg-white inline-block hover:bg-[#fff6a3] transition-colors"
-              aria-label="View this address on arcscan"
+        {/* ─── DEPOSIT ─────────────────────────────────────────── */}
+        <section
+          className="py-6 border-b border-dashed grid grid-cols-12 gap-6"
+          style={{ borderColor: "var(--green-dim)" }}
+        >
+          <div className="col-span-12 md:col-span-5">
+            <p className="section-marker mb-3">[06] DEPOSIT · ARC·TESTNET</p>
+            <div
+              className="border p-3"
+              style={{
+                borderColor: "var(--green-dim)",
+                background: "var(--bg-soft)",
+              }}
             >
-              <QRCodeSVG
-                value={`${ARC_DISPLAY.explorerUrl}/address/${address}`}
-                size={150}
-                marginSize={0}
-                fgColor="#000000"
-              />
-            </a>
-            <p className="label opacity-70 mt-3">
-              Scan or click → arcscan
-            </p>
-          </div>
-          <div className="col-span-12 lg:col-span-8 py-10 lg:pl-6 space-y-4">
-            <div className="label">Arc Testnet address</div>
-            <code className="block font-mono text-sm sm:text-base break-all border-2 border-black p-3 sm:p-4 leading-tight">
-              {address}
-            </code>
-            <div className="grid sm:grid-cols-3 gap-3">
-              <button onClick={onCopyAddress} className="btn" disabled={!onCopyAddress}>
-                ▶ Copy address
-              </button>
               <a
                 href={`${ARC_DISPLAY.explorerUrl}/address/${address}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn text-center"
+                className="inline-block p-2"
+                aria-label="View this address on arcscan"
+                style={{ background: "var(--bg)" }}
               >
-                ▶ View on arcscan
+                <QRCodeSVG
+                  value={`${ARC_DISPLAY.explorerUrl}/address/${address}`}
+                  size={140}
+                  marginSize={0}
+                  bgColor="#0a0e08"
+                  fgColor="#a5f584"
+                />
               </a>
-              <a
-                href="https://faucet.circle.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-acid text-center"
-              >
-                ▶ Faucet.circle.com
-              </a>
+              <div className="mt-3 space-y-1">
+                <div className="label">ADDR</div>
+                <code
+                  className="block text-[11px] break-all leading-tight"
+                  style={{ color: "var(--amber)" }}
+                >
+                  {address}
+                </code>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  onClick={onCopyAddress}
+                  className="btn btn-sm"
+                  disabled={!onCopyAddress}
+                >
+                  [COPY]
+                </button>
+                <a
+                  href={`${ARC_DISPLAY.explorerUrl}/address/${address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm"
+                >
+                  [EXPLORER ↗]
+                </a>
+                <a
+                  href="https://faucet.circle.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-inverse btn-sm ml-auto"
+                >
+                  [FAUCET ↗]
+                </a>
+              </div>
             </div>
-            <p className="text-sm opacity-70 leading-relaxed pt-2">
-              Send testnet USDC, EURC, or cirBTC. On Arc, USDC is the native gas
-              token — no ETH required.
+          </div>
+
+          <div className="col-span-12 md:col-span-7 space-y-3">
+            <p className="section-marker">EXTERNAL TRANSFER</p>
+            <p
+              className="text-[13px] leading-relaxed"
+              style={{ color: "var(--green-dim)" }}
+            >
+              Send testnet USDC, EURC, or cirBTC to the address on the left.
+              On Arc, USDC is the native gas token — no ETH required. For
+              instant in-app top-ups, use the faucet section below.
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── TESTNET FAUCET ─────────────────────────────────────────── */}
-      {!readOnly && onMintToken ? (
-        <section className="border-b-2 border-black">
-          <div className="mx-auto max-w-[1280px] px-6 py-10">
-            <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
-              <div className="label">07 / Testnet faucet</div>
-              <div className="label opacity-60">mock tokens · open mint</div>
+        {/* ─── TESTNET FAUCET ─────────────────────────────────── */}
+        {!readOnly && onMintToken ? (
+          <section
+            className="py-6 border-b border-dashed"
+            style={{ borderColor: "var(--green-dim)" }}
+          >
+            <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
+              <p className="section-marker">[07] TESTNET·FAUCET</p>
+              <span className="label">MOCK TOKENS · OPEN MINT</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <FaucetButton
-                label="Mint 1,000 USDC"
+                label="MINT 1,000 USDC"
                 token="usdc"
                 onMint={onMintToken}
                 busy={minting === "usdc"}
                 disabled={minting !== null && minting !== "usdc"}
               />
               <FaucetButton
-                label="Mint 1,000 EURC"
+                label="MINT 1,000 EURC"
                 token="eurc"
                 onMint={onMintToken}
                 busy={minting === "eurc"}
                 disabled={minting !== null && minting !== "eurc"}
               />
               <FaucetButton
-                label="Mint 0.0013 cirBTC"
+                label="MINT 0.0013 CIRBTC"
                 token="cirbtc"
                 onMint={onMintToken}
                 busy={minting === "cirbtc"}
                 disabled={minting !== null && minting !== "cirbtc"}
               />
             </div>
-            <p className="text-sm opacity-70 leading-relaxed mt-4">
-              Mints land in your Circle wallet in a few seconds via{" "}
-              <code className="ledger normal-case text-xs">mint(address,uint256)</code>{" "}
-              on the hackathon mock tokens. Real Arc tokens don&apos;t support
-              this — use{" "}
+            <p
+              className="text-[12px] leading-relaxed mt-3"
+              style={{ color: "var(--green-dim)" }}
+            >
+              Mints land in the connected Circle wallet in a few seconds via{" "}
+              <code style={{ color: "var(--amber)" }}>
+                mint(address,uint256)
+              </code>{" "}
+              on the hackathon mocks. Real Arc tokens don&apos;t support this —
+              use{" "}
               <a
                 href="https://faucet.circle.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
+                style={{ color: "var(--green)" }}
               >
                 faucet.circle.com
               </a>{" "}
               for those.
             </p>
-          </div>
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
-      {/* ─── HISTORY ────────────────────────────────────────────────── */}
-      {decisions.length > 1 ? (
-        <section className="border-b-2 border-black">
-          <div className="mx-auto max-w-[1280px] px-6 py-10">
-            <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
-              <div className="label">
-                08 / History · {decisions.length - 1} prior {decisions.length - 1 === 1 ? "decision" : "decisions"}
-              </div>
-              <div className="label opacity-60">click any row →</div>
+        {/* ─── HISTORY ─────────────────────────────────────────── */}
+        {decisions.length > 1 ? (
+          <section
+            className="py-6 border-b border-dashed"
+            style={{ borderColor: "var(--green-dim)" }}
+          >
+            <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
+              <p className="section-marker">
+                [08] DECISION·LOG · LAST {decisions.length - 1}{" "}
+                {decisions.length - 1 === 1 ? "ENTRY" : "ENTRIES"}
+              </p>
+              <span className="label">CLICK ANY ROW →</span>
             </div>
 
-            {/* Desktop table */}
-            <div className="hidden md:block border-2 border-black">
-              <div className="grid grid-cols-[130px_110px_1fr_80px] label bg-black text-white">
-                <div className="px-4 py-2.5">When</div>
-                <div className="px-4 py-2.5 border-l border-white/20">Regime</div>
-                <div className="px-4 py-2.5 border-l border-white/20">Note</div>
-                <div className="px-4 py-2.5 border-l border-white/20 text-right">State</div>
-              </div>
-              {decisions.slice(1).map((d, i, arr) => (
+            <div className="space-y-1">
+              {decisions.slice(1).map((d) => (
                 <Link
                   key={d.id}
                   href={`/trace/${d.id}`}
-                  className={`grid grid-cols-[130px_110px_1fr_80px] items-center hover:bg-[#fff6a3] transition-colors ${
-                    i < arr.length - 1 ? "border-b border-black" : ""
-                  }`}
+                  className="grid grid-cols-[auto_auto_1fr_auto] gap-x-5 items-baseline py-1.5 px-2 -mx-2 transition-colors hover:bg-[color:var(--bg-row-hover)]"
                 >
-                  <div className="px-4 py-3 label ledger whitespace-nowrap">
-                    {new Date(d.created_at).toLocaleString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                  <div className="px-4 py-3 border-l border-black">
-                    <RegimePill regime={d.regime} size="sm" />
-                  </div>
-                  <div className="px-4 py-3 text-sm border-l border-black truncate">
+                  <span
+                    className="text-[11px] tabular-nums whitespace-nowrap"
+                    style={{ color: "var(--green-dim)" }}
+                  >
+                    {new Date(d.created_at)
+                      .toISOString()
+                      .slice(5, 16)
+                      .replace("T", " ")}
+                  </span>
+                  <RegimePill regime={d.regime} size="sm" />
+                  <span
+                    className="text-[12px] truncate"
+                    style={{ color: "var(--white)" }}
+                  >
                     {d.reasoning}
-                  </div>
-                  <div className="px-4 py-3 label text-right border-l border-black">
-                    {d.executed ? "▍ Exec" : d.partial ? "▎ Part." : "○ Plan"}
-                  </div>
+                  </span>
+                  <span
+                    className="text-[10px] tracking-[0.25em] uppercase whitespace-nowrap"
+                    style={{
+                      color: d.executed
+                        ? "var(--green)"
+                        : d.partial
+                          ? "var(--amber)"
+                          : "var(--green-dim)",
+                    }}
+                  >
+                    {d.executed ? "EXEC" : d.partial ? "PART" : "PLAN"}
+                  </span>
                 </Link>
               ))}
             </div>
 
-            {/* Mobile card stack */}
-            <ul className="md:hidden border-2 border-black divide-y divide-black">
-              {decisions.slice(1).map((d) => (
-                <li key={d.id}>
-                  <Link
-                    href={`/trace/${d.id}`}
-                    className="block px-4 py-3 hover:bg-[#fff6a3] active:bg-[#fff6a3] transition-colors"
-                  >
-                    <div className="flex items-baseline gap-3 mb-1">
-                      <span className="label ledger">
-                        {new Date(d.created_at).toLocaleString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                      <RegimePill regime={d.regime} size="sm" />
-                      <span className="label ml-auto">
-                        {d.executed ? "▍ Exec" : d.partial ? "▎ Part." : "○ Plan"}
-                      </span>
-                    </div>
-                    <p className="text-sm leading-snug truncate">{d.reasoning}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
             {hasMore && onLoadMore ? (
-              <div className="pt-6 flex justify-center">
-                <button onClick={onLoadMore} disabled={loadingMore} className="btn">
-                  {loadingMore ? "▢ Loading…" : "▢ Load older decisions"}
+              <div className="pt-4 flex justify-center">
+                <button
+                  onClick={onLoadMore}
+                  disabled={loadingMore}
+                  className="btn btn-sm"
+                >
+                  {loadingMore ? "[LOADING…]" : "[LOAD OLDER]"}
                 </button>
               </div>
             ) : null}
-          </div>
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
-      {/* ─── FOOTER ─────────────────────────────────────────────────── */}
-      <footer>
-        <div className="mx-auto max-w-[1280px] px-6 py-4 flex flex-wrap items-baseline justify-between gap-3 label">
-          <span>Trapeza ▍ Treasury OS ▍ {ARC_DISPLAY.name} · chainId {ARC_DISPLAY.chainId}</span>
-          <span className="opacity-60">Cron · every 15 min · GitHub Actions</span>
-        </div>
-      </footer>
+        {/* ─── FOOTER ──────────────────────────────────────────── */}
+        <footer className="pt-4 pb-6 flex flex-wrap items-baseline justify-between gap-3 label">
+          <span>
+            TRAPEZA·TERM · {ARC_DISPLAY.name.toUpperCase()} · CHAIN{" "}
+            {ARC_DISPLAY.chainId}
+          </span>
+          <span>CRON · */15 · GITHUB ACTIONS</span>
+        </footer>
+      </div>
     </div>
   );
 }
@@ -561,30 +656,35 @@ function PnlPill({
   // Treat |delta| < 1 cent + |pct| < 0.005% as flat. Avoids "+$0.00 (+0.00%)"
   // when CoinGecko's 24h change rounds to ~zero on quiet days.
   const flat = Math.abs(deltaUsd) < 0.01 && Math.abs(deltaPct) < 0.005;
+  const color = flat
+    ? "var(--green-dim)"
+    : deltaUsd >= 0
+      ? "var(--green)"
+      : "var(--red)";
   const sign = flat ? "—" : deltaUsd >= 0 ? "▲" : "▼";
-  const bg = flat ? "#FFFFFF" : deltaUsd >= 0 ? "var(--acid)" : "var(--red)";
-  const fg = flat ? "#000" : deltaUsd >= 0 ? "#000" : "#FFFFFF";
   const absUsd = Math.abs(deltaUsd).toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
   const absPct = Math.abs(deltaPct).toFixed(2);
   const usdLabel = flat
-    ? "Flat"
+    ? "FLAT"
     : `${deltaUsd >= 0 ? "+" : "−"}$${absUsd}`;
   const pctLabel = flat ? "" : `${deltaUsd >= 0 ? "+" : "−"}${absPct}%`;
   return (
     <div
-      className="inline-flex items-center gap-2 border-2 border-black px-2.5 py-1 label whitespace-nowrap"
-      style={{ background: bg, color: fg }}
+      className="inline-flex items-center gap-2 border px-2 py-1 whitespace-nowrap text-[11px] tracking-[0.15em]"
+      style={{ color, borderColor: color, background: "var(--bg-soft)" }}
       aria-label={`24-hour change ${usdLabel} ${pctLabel}`}
     >
       <span aria-hidden>{sign}</span>
-      <span className="ledger normal-case tracking-tight">
+      <span className="tabular-nums">
         {usdLabel}
-        {pctLabel ? <span className="opacity-80">{" "}({pctLabel})</span> : null}
+        {pctLabel ? (
+          <span style={{ color: "var(--green-dim)" }}> ({pctLabel})</span>
+        ) : null}
       </span>
-      <span className="opacity-60">· 24h</span>
+      <span style={{ color: "var(--green-dim)" }}>· 24H</span>
     </div>
   );
 }
@@ -607,59 +707,36 @@ function FaucetButton({
       type="button"
       onClick={() => onMint(token)}
       disabled={busy || disabled}
-      className="btn !text-sm !py-4"
+      className="btn !text-[11px] !py-3 w-full"
     >
-      {busy ? "▶ Minting…" : `▶ ${label}`}
+      {busy ? "[MINTING…]" : `[${label}]`}
     </button>
-  );
-}
-
-function ExecutedBadge({ executed, partial }: { executed: boolean; partial: boolean }) {
-  const { bg, label } = executed
-    ? { bg: "#00FF66", label: "▍ Executed" }
-    : partial
-      ? { bg: "#FFEE00", label: "▎ Partial" }
-      : { bg: "#FFFFFF", label: "○ Plan only" };
-  return (
-    <span
-      className="inline-block w-fit border-2 border-black px-2 py-1 label"
-      style={{ background: bg }}
-    >
-      {label}
-    </span>
-  );
-}
-
-function Datum({ label, value, loading }: { label: string; value: string; loading?: boolean }) {
-  return (
-    <div>
-      <div className="label mb-1">{label}</div>
-      {loading ? (
-        <Skeleton heightClass="h-6 w-24" />
-      ) : (
-        <div className="text-lg font-bold tabular-nums ledger">{value}</div>
-      )}
-    </div>
   );
 }
 
 function Skeleton({ heightClass }: { heightClass: string }) {
   return (
-    <div className={`${heightClass} bg-black/5 animate-pulse border border-black/10`} />
+    <div
+      className={`${heightClass} animate-pulse border border-dashed`}
+      style={{
+        borderColor: "var(--green-dim)",
+        background: "var(--bg-soft)",
+      }}
+    />
   );
 }
 
 function timeAgo(iso: string): string {
   const elapsedMs = Date.now() - new Date(iso).getTime();
   const sec = Math.max(0, Math.round(elapsedMs / 1000));
-  if (sec < 30) return "just now";
-  if (sec < 60) return `${sec}s ago`;
+  if (sec < 30) return "JUST NOW";
+  if (sec < 60) return `${sec}S AGO`;
   const min = Math.round(sec / 60);
-  if (min < 60) return `${min}m ago`;
+  if (min < 60) return `${min}M AGO`;
   const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr}h ago`;
+  if (hr < 24) return `${hr}H AGO`;
   const days = Math.round(hr / 24);
-  return `${days}d ago`;
+  return `${days}D AGO`;
 }
 
 function PositionsTable({
@@ -678,86 +755,125 @@ function PositionsTable({
       amount: balances?.usdc,
       usd: balances?.totals_usd.usdc,
       target: latest?.target_weights.usdc,
+      color: "var(--white)",
     },
     {
       symbol: "USYC",
-      hint: "yield · ~10% APY",
+      hint: "yield · ~10% apy",
       amount: balances?.usyc,
       usd: balances?.totals_usd.usyc,
       target: latest?.target_weights.usyc,
+      color: "var(--amber)",
     },
     {
       symbol: "EURC",
-      hint: "safe-FX",
+      hint: "safe-fx",
       amount: balances?.eurc,
       usd: balances?.totals_usd.eurc,
       target: latest?.target_weights.eurc,
+      color: "var(--white)",
     },
     {
-      symbol: "cirBTC",
+      symbol: "CIRBTC",
       hint: "risk",
       amount: balances?.cirbtc,
       usd: balances?.totals_usd.cirbtc,
       target: latest?.target_weights.cirbtc,
+      color: "var(--green)",
     },
   ];
 
   return (
-    <>
-      {/* Desktop table */}
-      <div className="hidden sm:block border-2 border-black">
-        <div className="grid grid-cols-[1fr_120px_120px_80px] label bg-black text-white">
-          <div className="px-4 py-2.5">Symbol</div>
-          <div className="px-4 py-2.5 border-l border-white/20 text-right">Units</div>
-          <div className="px-4 py-2.5 border-l border-white/20 text-right">USD value</div>
-          <div className="px-4 py-2.5 border-l border-white/20 text-right">Target</div>
-        </div>
-        {rows.map((r, i) => (
-          <div
-            key={r.symbol}
-            className={`grid grid-cols-[1fr_120px_120px_80px] items-center ${
-              i < rows.length - 1 ? "border-b border-black" : ""
-            }`}
-          >
-            <div className="px-4 py-4">
-              <div className="text-lg font-bold tracking-tight">{r.symbol}</div>
-              <div className="label-sm text-[color:var(--ink-muted)]">{r.hint}</div>
-            </div>
-            <div className="px-4 py-4 border-l border-black text-right ledger text-sm tabular-nums">
-              {loading ? "…" : r.amount !== undefined ? r.amount.toLocaleString(undefined, { maximumFractionDigits: 6 }) : "—"}
-            </div>
-            <div className="px-4 py-4 border-l border-black text-right text-base font-bold tabular-nums">
-              {loading ? "…" : r.usd !== undefined ? `$${r.usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
-            </div>
-            <div className="px-4 py-4 border-l border-black text-right ledger label tabular-nums">
-              {r.target !== undefined ? `${(r.target * 100).toFixed(0)}%` : "—"}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Mobile card stack */}
-      <ul className="sm:hidden border-2 border-black divide-y divide-black">
+    <table className="w-full text-[12px]">
+      <thead>
+        <tr
+          className="text-left text-[10px] tracking-[0.25em] uppercase border-b border-dashed"
+          style={{
+            color: "var(--green-dim)",
+            borderColor: "var(--green-dim)",
+          }}
+        >
+          <th className="py-1.5 font-normal">SYMBOL</th>
+          <th className="py-1.5 font-normal text-right">UNITS</th>
+          <th className="py-1.5 font-normal text-right">USD</th>
+          <th className="py-1.5 font-normal text-right">TGT</th>
+        </tr>
+      </thead>
+      <tbody>
         {rows.map((r) => (
-          <li key={r.symbol} className="px-4 py-3">
-            <div className="flex items-baseline justify-between gap-3">
-              <div>
-                <div className="text-lg font-bold tracking-tight">{r.symbol}</div>
-                <div className="label-sm text-[color:var(--ink-muted)]">{r.hint}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-base font-bold tabular-nums">
-                  {loading ? "…" : r.usd !== undefined ? `$${r.usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
-                </div>
-                <div className="label ledger opacity-70 tabular-nums">
-                  {loading ? "" : r.amount !== undefined ? r.amount.toLocaleString(undefined, { maximumFractionDigits: 6 }) : ""}
-                  {r.target !== undefined ? ` · ${(r.target * 100).toFixed(0)}% tgt` : ""}
-                </div>
-              </div>
-            </div>
-          </li>
+          <tr
+            key={r.symbol}
+            className="border-b border-dotted"
+            style={{ borderColor: "var(--green-dim)" }}
+          >
+            <td className="py-2">
+              <span className="font-bold tracking-[0.15em]" style={{ color: r.color }}>
+                {r.symbol}
+              </span>{" "}
+              <span
+                className="text-[10px] uppercase tracking-[0.15em]"
+                style={{ color: "var(--green-dim)" }}
+              >
+                {r.hint}
+              </span>
+            </td>
+            <td
+              className="py-2 text-right tabular-nums"
+              style={{ color: "var(--green)" }}
+            >
+              {loading
+                ? "…"
+                : r.amount !== undefined
+                  ? r.amount.toLocaleString(undefined, {
+                      maximumFractionDigits: 6,
+                    })
+                  : "—"}
+            </td>
+            <td
+              className="py-2 text-right tabular-nums font-bold"
+              style={{ color: "var(--white)" }}
+            >
+              {loading
+                ? "…"
+                : r.usd !== undefined
+                  ? `$${r.usd.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`
+                  : "—"}
+            </td>
+            <td
+              className="py-2 text-right tabular-nums"
+              style={{ color: "var(--amber)" }}
+            >
+              {r.target !== undefined
+                ? `${(r.target * 100).toFixed(0)}%`
+                : "—"}
+            </td>
+          </tr>
         ))}
-      </ul>
-    </>
+        <tr>
+          <td
+            className="pt-3 text-[10px] tracking-[0.3em] uppercase"
+            style={{ color: "var(--green-dim)" }}
+          >
+            TOTAL
+          </td>
+          <td />
+          <td
+            className="pt-3 text-right tabular-nums font-bold"
+            style={{ color: "var(--white)" }}
+          >
+            {balances
+              ? `$${balances.total.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`
+              : "—"}
+          </td>
+          <td />
+        </tr>
+      </tbody>
+    </table>
   );
 }

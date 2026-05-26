@@ -13,8 +13,7 @@ const NUMERALS: Record<Goal, string> = {
 
 export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
   const router = useRouter();
-  // No default — user MUST pick. Prevents the "click through, get balanced
-  // by accident" failure mode QA #11.
+  // No default — user MUST pick.
   const [selected, setSelected] = useState<Goal | null>(initialGoal);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,137 +46,175 @@ export function GoalPicker({ initialGoal }: { initialGoal: Goal | null }) {
   }
 
   return (
-    <>
-      <section className="border-b-2 border-black">
-        <div className="mx-auto max-w-[1280px] px-6">
-          <div className="label py-5 border-b border-black flex items-baseline justify-between gap-3 flex-wrap">
-            <span>Pick one · weights live inside these bands</span>
-            {!selected ? (
-              <span className="text-[color:var(--ink-muted)]">
-                ▢ no selection yet
-              </span>
-            ) : null}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3">
-            {(Object.keys(goalBands) as Goal[]).map((g, i) => {
-              const b = goalBands[g];
-              const active = selected === g;
-              return (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => setSelected(g)}
-                  aria-pressed={active}
-                  className={`text-left p-8 lg:p-10 transition-colors border-b lg:border-b-0 border-black ${
-                    i < 2 ? "lg:border-r lg:border-black" : ""
-                  } ${
-                    active
-                      ? "bg-black text-white"
-                      : "bg-white text-black hover:bg-[#fff6a3]"
-                  }`}
-                >
-                  <div className="flex items-baseline justify-between gap-4">
-                    <div
-                      className="font-bold inline-block px-2 -ml-1"
-                      style={{
-                        background: "#00FF66",
-                        color: "#000",
-                        fontSize: "44px",
-                        lineHeight: 1,
-                      }}
-                    >
-                      §{NUMERALS[g]}
-                    </div>
-                    <span
-                      aria-hidden
-                      className={`size-4 border-2 ${
-                        active
-                          ? "border-[#00FF66] bg-[#00FF66]"
-                          : "border-black"
-                      }`}
-                    />
+    <div className="mx-auto max-w-[1180px] px-5">
+      <section
+        className="py-6 border-b border-dashed"
+        style={{ borderColor: "var(--green-dim)" }}
+      >
+        <div className="section-marker mb-4 flex items-baseline justify-between gap-3 flex-wrap">
+          <span>[STEP II / II] · PICK MANDATE · WEIGHTS LIVE INSIDE BANDS</span>
+          {!selected ? (
+            <span style={{ color: "var(--amber)" }}>▢ NO SELECTION YET</span>
+          ) : (
+            <span style={{ color: "var(--green)" }}>
+              ▣ {selected.toUpperCase()}
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {(Object.keys(goalBands) as Goal[]).map((g) => {
+            const b = goalBands[g];
+            const active = selected === g;
+            const borderColor = active ? "var(--green)" : "var(--green-dim)";
+            return (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setSelected(g)}
+                aria-pressed={active}
+                className="text-left p-5 border transition-colors hover:bg-[color:var(--bg-row-hover)]"
+                style={{
+                  borderColor,
+                  background: active
+                    ? "var(--green-soft)"
+                    : "var(--bg-soft)",
+                }}
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <div
+                    className="font-bold inline-block px-2 text-[20px] leading-none tracking-[0.15em]"
+                    style={{
+                      background: "var(--green)",
+                      color: "var(--bg)",
+                    }}
+                  >
+                    §{NUMERALS[g]}
                   </div>
-                  <h3 className="text-3xl font-bold tracking-tight mt-5">
-                    {b.label}
-                  </h3>
-                  <p
-                    className={`text-sm leading-relaxed mt-3 ${
-                      active ? "text-white" : "text-black opacity-80"
-                    }`}
+                  <span
+                    aria-hidden
+                    className="size-3 border"
+                    style={{
+                      borderColor: active ? "var(--green)" : "var(--green-dim)",
+                      background: active ? "var(--green)" : "transparent",
+                    }}
+                  />
+                </div>
+                <h3
+                  className="text-[16px] font-bold tracking-[0.2em] uppercase mt-4"
+                  style={{ color: "var(--white)" }}
+                >
+                  {b.label}
+                </h3>
+                <p
+                  className="text-[12px] leading-relaxed mt-2"
+                  style={{ color: "var(--green-dim)" }}
+                >
+                  {b.blurb}
+                </p>
+                <dl
+                  className="mt-4 pt-3 border-t border-dashed grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px] tabular-nums"
+                  style={{ borderColor: "var(--green-dim)" }}
+                >
+                  <dt style={{ color: "var(--green-dim)" }}>CIRBTC</dt>
+                  <dd
+                    className="text-right"
+                    style={{ color: "var(--white)" }}
                   >
-                    {b.blurb}
-                  </p>
-                  <dl
-                    className={`mt-6 pt-5 ${
-                      active ? "border-t border-white/40" : "border-t border-black"
-                    } grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 label ledger`}
+                    {b.cirbtc[0].toFixed(2)} – {b.cirbtc[1].toFixed(2)}
+                  </dd>
+                  <dt style={{ color: "var(--green-dim)" }}>USYC ≥</dt>
+                  <dd
+                    className="text-right"
+                    style={{ color: "var(--amber)" }}
                   >
-                    <dt className="opacity-70">cirBTC</dt>
-                    <dd className="text-right tabular-nums">
-                      {b.cirbtc[0].toFixed(2)} – {b.cirbtc[1].toFixed(2)}
-                    </dd>
-                    <dt className="opacity-70">EURC ≥</dt>
-                    <dd className="text-right tabular-nums">
-                      {b.eurcMin.toFixed(2)}
-                    </dd>
-                    <dt className="opacity-70">USYC ≥</dt>
-                    <dd className="text-right tabular-nums">
-                      {b.usycMin.toFixed(2)}
-                    </dd>
-                    <dt className="opacity-70">USDC ≥</dt>
-                    <dd className="text-right tabular-nums">
-                      {b.usdcMin.toFixed(2)}
-                    </dd>
-                  </dl>
-                </button>
-              );
-            })}
-          </div>
+                    {b.usycMin.toFixed(2)}
+                  </dd>
+                  <dt style={{ color: "var(--green-dim)" }}>EURC ≥</dt>
+                  <dd
+                    className="text-right"
+                    style={{ color: "var(--white)" }}
+                  >
+                    {b.eurcMin.toFixed(2)}
+                  </dd>
+                  <dt style={{ color: "var(--green-dim)" }}>USDC ≥</dt>
+                  <dd
+                    className="text-right"
+                    style={{ color: "var(--white)" }}
+                  >
+                    {b.usdcMin.toFixed(2)}
+                  </dd>
+                </dl>
+              </button>
+            );
+          })}
         </div>
       </section>
 
       {error ? (
-        <section className="border-b-2 border-black">
-          <div className="mx-auto max-w-[1280px] px-6 py-6">
+        <section
+          className="py-4 border-b border-dashed"
+          style={{ borderColor: "var(--red)" }}
+        >
+          <div
+            className="border p-4"
+            style={{
+              borderColor: "var(--red)",
+              background: "var(--red-soft)",
+            }}
+          >
             <div
-              className="border-2 border-black p-5"
-              style={{ background: "var(--red-soft)" }}
+              className="section-marker mb-1"
+              style={{ color: "var(--red)" }}
             >
-              <div className="label mb-2" style={{ color: "var(--red)" }}>
-                ▍ Wallet creation failed
-              </div>
-              <div className="text-sm font-medium mb-2 break-words">{error}</div>
-              <p className="label opacity-70 leading-relaxed normal-case">
-                Most common: <code className="ledger normal-case">lib/db/schema.sql</code> not
-                applied in Supabase, <code className="ledger normal-case">CIRCLE_WALLET_SET_ID</code> mismatch,
-                or Arc Testnet rate-limited. Vercel function logs have the full server trace.
-              </p>
+              ▍ WALLET CREATION FAILED
             </div>
+            <div
+              className="text-[13px] mb-2 break-words"
+              style={{ color: "var(--white)" }}
+            >
+              {error}
+            </div>
+            <p
+              className="text-[11px] leading-relaxed"
+              style={{ color: "var(--green-dim)" }}
+            >
+              Most common: <code style={{ color: "var(--amber)" }}>
+                lib/db/schema.sql
+              </code>{" "}
+              not applied in Supabase,{" "}
+              <code style={{ color: "var(--amber)" }}>
+                CIRCLE_WALLET_SET_ID
+              </code>{" "}
+              mismatch, or Arc Testnet rate-limited. Vercel function logs have
+              the full server trace.
+            </p>
           </div>
         </section>
       ) : null}
 
-      <section>
-        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4 py-8">
-          <p className="col-span-12 lg:col-span-7 lg:border-r lg:border-black lg:pr-6 text-sm leading-relaxed">
-            A Circle developer-controlled SCA wallet is minted on Arc Testnet.
-            We never see your funds — the agent only ever holds your deposits.
-          </p>
-          <div className="col-span-12 lg:col-span-5 lg:pl-6 flex items-center justify-end pt-4 lg:pt-0">
-            <button
-              onClick={submit}
-              disabled={creating || !selected}
-              className="btn-acid w-full lg:w-auto !text-sm !py-4"
-            >
-              {creating
-                ? "▶ Opening account…"
-                : selected
-                  ? `▶ Open my ${selected} account`
-                  : "▶ Select a mandate above"}
-            </button>
-          </div>
+      <section className="py-6 grid grid-cols-12 gap-6">
+        <p
+          className="col-span-12 lg:col-span-7 text-[13px] leading-relaxed"
+          style={{ color: "var(--white)" }}
+        >
+          <span style={{ color: "var(--green)" }}>&gt;</span> A Circle
+          developer-controlled SCA wallet is minted on Arc Testnet. We never
+          see funds — the agent only ever holds the user&apos;s deposits.
+        </p>
+        <div className="col-span-12 lg:col-span-5 flex items-center justify-end pt-2 lg:pt-0">
+          <button
+            onClick={submit}
+            disabled={creating || !selected}
+            className="btn-acid w-full lg:w-auto !text-[12px] !py-3"
+          >
+            {creating
+              ? "[OPENING ACCOUNT…]"
+              : selected
+                ? `[OPEN MY ${selected.toUpperCase()} ACCOUNT ↗]`
+                : "[SELECT A MANDATE ABOVE]"}
+          </button>
         </div>
       </section>
-    </>
+    </div>
   );
 }

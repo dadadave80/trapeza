@@ -47,171 +47,262 @@ export default async function TracePage({
   if (!d) notFound();
 
   const s = d.signals;
-  const dateline = new Date(d.created_at).toLocaleString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const dateline = new Date(d.created_at)
+    .toISOString()
+    .slice(0, 16)
+    .replace("T", " ");
 
   return (
     <div className="flex-1">
       <Masthead
         right={
-          <Link href="/portfolio" className="hover:underline whitespace-nowrap">
-            ← Portfolio
+          <Link
+            href="/portfolio"
+            className="text-[color:var(--green-dim)] hover:text-[color:var(--green)] tracking-[0.25em] uppercase whitespace-nowrap"
+          >
+            [← PORTFOLIO]
           </Link>
         }
       />
 
-      {/* HEADER */}
-      <section className="border-b-2 border-black">
-        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
-          <div className="col-span-12 lg:col-span-8 border-r border-black py-12 lg:pr-6">
-            <div className="label mb-3">Decision · {dateline}</div>
+      <div className="mx-auto max-w-[1180px] px-5">
+        {/* HEADER */}
+        <section
+          className="py-6 border-b border-dashed grid grid-cols-12 gap-6"
+          style={{ borderColor: "var(--green-dim)" }}
+        >
+          <div className="col-span-12 lg:col-span-8">
+            <p className="section-marker mb-3">
+              [DECISION] · {dateline}Z
+            </p>
             <h1
-              className="font-bold tracking-[-0.04em] leading-[0.9]"
-              style={{ fontSize: "clamp(56px, 11vw, 144px)" }}
+              className="font-bold tracking-[-0.02em] leading-[0.92]"
+              style={{
+                fontSize: "clamp(36px, 8vw, 88px)",
+                color: "var(--white)",
+              }}
             >
-              Why this
+              <span style={{ color: "var(--green-dim)" }}>&gt; </span>
+              WHY THIS
               <br />
-              <span className="inline-block px-3 -ml-1" style={{ background: "#00FF66" }}>
-                allocation?
+              <span
+                className="inline-block px-2"
+                style={{ background: "var(--green)", color: "var(--bg)" }}
+              >
+                ALLOCATION?
               </span>
             </h1>
           </div>
-          <div className="col-span-12 lg:col-span-4 py-12 lg:pl-6 flex flex-col gap-4 justify-end">
+          <div className="col-span-12 lg:col-span-4 flex flex-col gap-3 justify-end">
             <RegimePill regime={d.regime} size="lg" />
             <span
-              className="inline-block w-fit border-2 border-black px-2 py-1 label"
-              style={{ background: d.executed ? "#00FF66" : "#FFFFFF" }}
+              className="inline-flex w-fit items-center gap-1.5 border px-2 py-1 text-[11px] uppercase tracking-[0.25em]"
+              style={{
+                color: d.executed ? "var(--green)" : "var(--green-dim)",
+                borderColor: d.executed ? "var(--green)" : "var(--green-dim)",
+              }}
             >
-              {d.executed ? "▍ Executed" : "○ Plan only"}
+              <span aria-hidden>●</span>{" "}
+              {d.executed ? "EXECUTED" : "PLAN ONLY"}
             </span>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* PULL QUOTE */}
-      <section className="border-b-2 border-black">
-        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
-          <div className="col-span-12 lg:col-span-3 border-r border-black py-12 lg:pr-6">
-            <div className="label mb-4">01 / Memo</div>
-            <div className="label opacity-60">— Trapeza on Groq</div>
-          </div>
-          <div className="col-span-12 lg:col-span-9 py-12 lg:pl-6">
-            <p className="text-[26px] sm:text-[34px] leading-[1.2] font-medium tracking-tight">
-              &ldquo;{d.reasoning}&rdquo;
+        {/* PULL QUOTE */}
+        <section
+          className="py-6 border-b border-dashed"
+          style={{ borderColor: "var(--green-dim)" }}
+        >
+          <p className="section-marker mb-3">[01] AGENT·MEMO</p>
+          <div
+            className="border p-4"
+            style={{
+              borderColor: "var(--green-dim)",
+              background: "var(--bg-soft)",
+            }}
+          >
+            <p
+              className="text-[16px] leading-[1.55]"
+              style={{ color: "var(--white)" }}
+            >
+              <span style={{ color: "var(--green)" }}>&gt;</span> {d.reasoning}
             </p>
             {d.alerts?.length ? (
-              <ul className="mt-8 border-l-2 border-[color:var(--red)] pl-4 space-y-1">
+              <ul
+                className="mt-4 border-l-2 pl-3 space-y-1"
+                style={{ borderColor: "var(--red)" }}
+              >
                 {d.alerts.map((a, i) => (
-                  <li key={i} className="text-sm" style={{ color: "var(--red)" }}>
-                    ⚠︎ {a}
+                  <li
+                    key={i}
+                    className="text-[12px]"
+                    style={{ color: "var(--red)" }}
+                  >
+                    ⚠ {a}
                   </li>
                 ))}
               </ul>
             ) : null}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* TARGET ALLOCATION + SIGNALS */}
-      <section className="border-b-2 border-black">
-        <div className="mx-auto max-w-[1280px] px-6 grid grid-cols-12 gap-x-4">
-          <div className="col-span-12 lg:col-span-7 border-r border-black py-10 lg:pr-6">
-            <div className="label mb-6">02 / Target allocation</div>
+        {/* TARGET ALLOCATION + SIGNALS */}
+        <section
+          className="py-6 border-b border-dashed grid grid-cols-12 gap-6"
+          style={{ borderColor: "var(--green-dim)" }}
+        >
+          <div className="col-span-12 lg:col-span-7">
+            <p className="section-marker mb-4">[02] TARGET·ALLOCATION</p>
             <AllocationBar
               actual={d.target_weights}
               target={d.prev_weights ?? undefined}
             />
             {d.prev_weights ? (
-              <p className="label mt-5 opacity-70 normal-case tracking-wider">
-                Acid fill = target. Target marker (▏) = weights at decision time.
+              <p className="label mt-4 normal-case tracking-normal">
+                Top bar = new target; dim bar beneath = weights at decision
+                time.
               </p>
             ) : null}
           </div>
-          <div className="col-span-12 lg:col-span-5 py-10 lg:pl-6">
-            <div className="label mb-6">03 / Signals snapshot</div>
-            <dl className="border-2 border-black">
-              <Sig label="BTC 24h" value={`${s.btc_24h_change.toFixed(2)}%`} />
-              <Sig label="ETH 24h" value={`${s.eth_24h_change.toFixed(2)}%`} />
-              <Sig label="BTC vol" value={`${s.btc_realized_vol.toFixed(2)}%`} />
+          <div className="col-span-12 lg:col-span-5">
+            <p className="section-marker mb-4">[03] SIGNALS·SNAPSHOT</p>
+            <dl
+              className="border"
+              style={{
+                borderColor: "var(--green-dim)",
+                background: "var(--bg-soft)",
+              }}
+            >
+              <Sig
+                label="BTC 24H"
+                value={`${s.btc_24h_change.toFixed(2)}%`}
+                color={s.btc_24h_change >= 0 ? "var(--green)" : "var(--red)"}
+              />
+              <Sig
+                label="ETH 24H"
+                value={`${s.eth_24h_change.toFixed(2)}%`}
+                color={s.eth_24h_change >= 0 ? "var(--green)" : "var(--red)"}
+              />
+              <Sig
+                label="BTC VOL"
+                value={`${s.btc_realized_vol.toFixed(2)}%`}
+              />
               <Sig label="USDC" value={`$${s.usdc_price.toFixed(4)}`} />
               <Sig label="USDT" value={`$${s.usdt_price.toFixed(4)}`} />
               <Sig
-                label="Fetched"
-                value={new Date(s.fetched_at).toLocaleTimeString()}
+                label="FETCHED"
+                value={`${new Date(s.fetched_at)
+                  .toISOString()
+                  .slice(11, 19)}Z`}
                 last
               />
             </dl>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ONCHAIN FOOTNOTE */}
-      <section className="border-b-2 border-black">
-        <div className="mx-auto max-w-[1280px] px-6 py-12">
-          <div className="label mb-5">04 / Onchain footnote</div>
-          <p className="text-sm max-w-prose mb-6">
-            The reasoning above was serialised, SHA-256 hashed, and pinned to
-            the TraceAnchor contract on Arc. The swap (if any) was settled
-            through Circle App Kit via a developer-controlled SCA wallet.
+        {/* ONCHAIN FOOTNOTE */}
+        <section
+          className="py-6 border-b border-dashed"
+          style={{ borderColor: "var(--green-dim)" }}
+        >
+          <p className="section-marker mb-3">[04] ONCHAIN·FOOTNOTE</p>
+          <p
+            className="text-[13px] max-w-prose mb-5 leading-relaxed"
+            style={{ color: "var(--green-dim)" }}
+          >
+            <span style={{ color: "var(--green)" }}>&gt;</span> Reasoning above
+            was serialised, SHA-256 hashed, and pinned to the TraceAnchor
+            contract on Arc. Swap legs (if any) settled via Circle DCW + the
+            MockSwap router.
           </p>
-          <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
+          <div className="grid lg:grid-cols-[2fr_1fr] gap-4">
             <div>
-              <div className="label mb-2">Trace hash · sha256</div>
-              <code className="block break-all font-mono text-sm border-2 border-black p-4">
+              <p className="label mb-2">TRACE·HASH · SHA256</p>
+              <code
+                className="block break-all text-[12px] border p-3"
+                style={{
+                  borderColor: "var(--green-dim)",
+                  background: "var(--bg-soft)",
+                  color: "var(--amber)",
+                }}
+              >
                 {d.trace_hash ?? "—"}
               </code>
             </div>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               {d.arc_tx_hash ? (
                 <a
-                  href={`https://testnet.arcscan.app/tx/${d.arc_tx_hash}`}
+                  href={`${ARC_DISPLAY.explorerUrl}/tx/${d.arc_tx_hash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn"
+                  className="btn-acid btn-sm text-center"
                 >
-                  ▶ Swap tx on arcscan
+                  [SWAP TX ↗]
                 </a>
               ) : null}
               {d.circle_tx_id ? (
-                <div className="border-2 border-black p-3">
-                  <div className="label mb-1">Circle tx id</div>
-                  <div className="ledger text-xs break-all opacity-70">
+                <div
+                  className="border p-3"
+                  style={{
+                    borderColor: "var(--green-dim)",
+                    background: "var(--bg-soft)",
+                  }}
+                >
+                  <div className="label mb-1">CIRCLE TX ID</div>
+                  <div
+                    className="text-[11px] break-all"
+                    style={{ color: "var(--green-dim)" }}
+                  >
                     {d.circle_tx_id}
                   </div>
                 </div>
               ) : null}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <footer>
-        <div className="mx-auto max-w-[1280px] px-6 py-4 flex flex-wrap items-baseline justify-between gap-3 label">
-          <span>Trapeza ▍ Treasury OS ▍ {ARC_DISPLAY.name} · chainId {ARC_DISPLAY.chainId}</span>
-          <Link href="/portfolio" className="hover:underline">
-            ← Back to portfolio
+        <footer className="pt-4 pb-6 flex flex-wrap items-baseline justify-between gap-3 label">
+          <span>
+            TRAPEZA·TERM · {ARC_DISPLAY.name.toUpperCase()} · CHAIN{" "}
+            {ARC_DISPLAY.chainId}
+          </span>
+          <Link
+            href="/portfolio"
+            className="hover:text-[color:var(--green)]"
+          >
+            [← BACK TO PORTFOLIO]
           </Link>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }
 
-function Sig({ label, value, last }: { label: string; value: string; last?: boolean }) {
+function Sig({
+  label,
+  value,
+  color,
+  last,
+}: {
+  label: string;
+  value: string;
+  color?: string;
+  last?: boolean;
+}) {
   return (
     <div
-      className={`grid grid-cols-[1fr_auto] items-center px-4 py-3 ${
-        !last ? "border-b border-black" : ""
-      }`}
+      className="grid grid-cols-[1fr_auto] items-center px-3 py-2.5"
+      style={{
+        borderBottom: last ? "none" : "1px dashed var(--green-dim)",
+      }}
     >
       <dt className="label">{label}</dt>
-      <dd className="ledger tabular-nums font-bold">{value}</dd>
+      <dd
+        className="tabular-nums font-bold text-[12px]"
+        style={{ color: color ?? "var(--white)" }}
+      >
+        {value}
+      </dd>
     </div>
   );
 }
