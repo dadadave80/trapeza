@@ -28,8 +28,6 @@ The cash sleeve doesn't sit at 0%. Idle USDC autosweeps into the USYC vault to e
 
 ## Why this wins on the rubric
 
-Judging is **30 % agentic sophistication · 30 % traction · 20 % Circle tool usage · 20 % innovation.**
-
 - **Agency.** Regime classification, target weights inside hard bands, rebalance timing, multi-leg routing (including 2-hop via USDC for any USYC↔non-USDC move). Every decision carries a plain-English memo and is hard-clamped to the mandate's bands so a hallucination can't violate the user contract.
 - **Traction.** Sign-in is one email magic link. Onboarding mints a Circle dev-controlled SCA wallet on Arc Testnet. An in-app faucet card mints 1,000 mock USDC / EURC and 0.0013 mock cirBTC with one click — no leaving the dashboard. A `/demo` route lets curious judges browse the full UI with mock data.
 - **Circle tools (five surfaces).**
@@ -249,12 +247,10 @@ cd contracts
 forge test                                  # 14 tests should pass
 forge script script/Deploy.s.sol \
   --rpc-url https://rpc.testnet.arc.network \
-  --account daveKey --broadcast
+  --account <your-keystore> --broadcast --verify
 forge script script/DeployMockSwap.s.sol \
   --rpc-url https://rpc.testnet.arc.network \
-  --account daveKey --broadcast
-# Verify:
-forge script script/Verify.s.sol --rpc-url https://rpc.testnet.arc.network
+  --account <your-keystore> --broadcast --verify
 cd ..
 
 # 7. Smoke-test the swap + agent paths end-to-end
