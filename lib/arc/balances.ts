@@ -26,6 +26,14 @@ export type TokenBalances = {
   // USD value per token (= units × price).
   totals_usd: { usdc: number; eurc: number; cirbtc: number; usyc: number };
   total: number;
+  // 24h portfolio P&L derived from CoinGecko's `usd_24h_change` on BTC + EUR.
+  // We re-price the *current* basket at yesterday's prices — this captures
+  // mark-to-market P&L (the only real P&L source in our mock economy, since
+  // MockSwap converts at oracle rates with no slippage). USDC + USYC are
+  // pinned at $1, so their contribution is always zero.
+  total_24h_ago: number;
+  delta_24h_usd: number;
+  delta_24h_pct: number;
   // Price provenance — applies to EURC + cirBTC (CoinGecko batch).
   price_source: PriceSource;
   fetched_at: string;
@@ -102,6 +110,23 @@ export async function readBalances(address: `0x${string}`): Promise<TokenBalance
   const total =
     totals_usd.usdc + totals_usd.eurc + totals_usd.cirbtc + totals_usd.usyc;
 
+  // 24h-ago re-pricing: for risk legs, current_price / (1 + 24h_change_pct).
+  // Stables stay at $1. Assumes basket hasn't changed in 24h, which is fine
+  // for a mock economy where swaps cost no slippage.
+  const cirbtcPrice24hAgo =
+    priceRes.cirbtc / (1 + (priceRes.cirbtc_change_24h_pct ?? 0) / 100);
+  const eurcPrice24hAgo =
+    priceRes.eurc / (1 + (priceRes.eurc_change_24h_pct ?? 0) / 100);
+  const total_24h_ago =
+    usdc * 1 + // USDC pinned at $1
+    eurc * eurcPrice24hAgo +
+    cirbtc * cirbtcPrice24hAgo +
+    usyc * usycPricePerShare; // USYC is also stable-pegged for our mock
+  const delta_24h_usd = total - total_24h_ago;
+  const delta_24h_pct = total_24h_ago > 0
+    ? (delta_24h_usd / total_24h_ago) * 100
+    : 0;
+
   return {
     usdc,
     eurc,
@@ -111,6 +136,9 @@ export async function readBalances(address: `0x${string}`): Promise<TokenBalance
     prices,
     totals_usd,
     total,
+    total_24h_ago,
+    delta_24h_usd,
+    delta_24h_pct,
     price_source: priceRes.source,
     fetched_at: new Date().toISOString(),
   };

@@ -131,21 +131,27 @@ export function DashboardView({
               <span className="opacity-60 normal-case">{band.label} mandate</span>
             </div>
             {loading ? (
-              <Skeleton heightClass="h-[112px] sm:h-[160px] lg:h-[200px]" />
+              <Skeleton heightClass="h-[88px] sm:h-[112px] lg:h-[140px]" />
             ) : balances ? (
-              <div
-                className="font-bold tabular-nums leading-[0.9] tracking-[-0.04em]"
-                style={{ fontSize: "clamp(56px, 14vw, 168px)" }}
-              >
-                ${balances.total.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 max-w-full">
+                <div
+                  className="font-bold tabular-nums leading-[0.9] tracking-[-0.04em] min-w-0"
+                  style={{ fontSize: "clamp(44px, 10vw, 112px)" }}
+                >
+                  ${balances.total.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </div>
+                <PnlPill
+                  deltaUsd={balances.delta_24h_usd}
+                  deltaPct={balances.delta_24h_pct}
+                />
               </div>
             ) : (
               <div
                 className="font-bold tabular-nums leading-[0.9] tracking-[-0.04em] opacity-30"
-                style={{ fontSize: "clamp(56px, 14vw, 168px)" }}
+                style={{ fontSize: "clamp(44px, 10vw, 112px)" }}
               >
                 $—
               </div>
@@ -541,6 +547,44 @@ export function DashboardView({
           <span className="opacity-60">Cron · every 15 min · GitHub Actions</span>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function PnlPill({
+  deltaUsd,
+  deltaPct,
+}: {
+  deltaUsd: number;
+  deltaPct: number;
+}) {
+  // Treat |delta| < 1 cent + |pct| < 0.005% as flat. Avoids "+$0.00 (+0.00%)"
+  // when CoinGecko's 24h change rounds to ~zero on quiet days.
+  const flat = Math.abs(deltaUsd) < 0.01 && Math.abs(deltaPct) < 0.005;
+  const sign = flat ? "—" : deltaUsd >= 0 ? "▲" : "▼";
+  const bg = flat ? "#FFFFFF" : deltaUsd >= 0 ? "var(--acid)" : "var(--red)";
+  const fg = flat ? "#000" : deltaUsd >= 0 ? "#000" : "#FFFFFF";
+  const absUsd = Math.abs(deltaUsd).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const absPct = Math.abs(deltaPct).toFixed(2);
+  const usdLabel = flat
+    ? "Flat"
+    : `${deltaUsd >= 0 ? "+" : "−"}$${absUsd}`;
+  const pctLabel = flat ? "" : `${deltaUsd >= 0 ? "+" : "−"}${absPct}%`;
+  return (
+    <div
+      className="inline-flex items-center gap-2 border-2 border-black px-2.5 py-1 label whitespace-nowrap"
+      style={{ background: bg, color: fg }}
+      aria-label={`24-hour change ${usdLabel} ${pctLabel}`}
+    >
+      <span aria-hidden>{sign}</span>
+      <span className="ledger normal-case tracking-tight">
+        {usdLabel}
+        {pctLabel ? <span className="opacity-80">{" "}({pctLabel})</span> : null}
+      </span>
+      <span className="opacity-60">· 24h</span>
     </div>
   );
 }

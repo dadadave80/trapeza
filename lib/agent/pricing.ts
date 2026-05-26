@@ -11,12 +11,16 @@
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const URL =
-  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,euro-coin&vs_currencies=usd";
+  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,euro-coin&vs_currencies=usd&include_24hr_change=true";
 
 // Sane recent floors; override via env if you need different fallbacks.
 const FALLBACK = {
   cirbtc: 60_000,
   eurc: 1.08,
+  // 0% means "no information" — the dashboard treats missing 24h change as
+  // a hidden pill, not a fake $0.00 delta.
+  cirbtc_change_24h_pct: 0,
+  eurc_change_24h_pct: 0,
 };
 
 export type PriceSource = "coingecko" | "cache" | "fallback";
@@ -24,6 +28,11 @@ export type PriceSource = "coingecko" | "cache" | "fallback";
 export type AllPrices = {
   cirbtc: number;
   eurc: number;
+  // 24h % change (e.g. 4.2 means up 4.2%). Used to derive a portfolio P&L
+  // pill by re-pricing current holdings at yesterday's prices. Stablecoin
+  // legs (USDC, USYC) are pinned at $1 with 0% change.
+  cirbtc_change_24h_pct: number;
+  eurc_change_24h_pct: number;
   source: PriceSource;
   fetched_at: string;
 };
@@ -32,6 +41,8 @@ type CacheEntry = {
   at: number;
   cirbtc: number;
   eurc: number;
+  cirbtc_change_24h_pct: number;
+  eurc_change_24h_pct: number;
   source: "coingecko" | "fallback";
 };
 
@@ -43,6 +54,8 @@ export async function getPrices(): Promise<AllPrices> {
     return {
       cirbtc: _cache.cirbtc,
       eurc: _cache.eurc,
+      cirbtc_change_24h_pct: _cache.cirbtc_change_24h_pct,
+      eurc_change_24h_pct: _cache.eurc_change_24h_pct,
       source: _cache.source === "coingecko" ? "cache" : "fallback",
       fetched_at: new Date(_cache.at).toISOString(),
     };
@@ -55,8 +68,8 @@ export async function getPrices(): Promise<AllPrices> {
     });
     if (!res.ok) throw new Error(`CoinGecko ${res.status}: ${await res.text()}`);
     const data = (await res.json()) as {
-      bitcoin?: { usd?: number };
-      "euro-coin"?: { usd?: number };
+      bitcoin?: { usd?: number; usd_24h_change?: number };
+      "euro-coin"?: { usd?: number; usd_24h_change?: number };
     };
     const btc = data.bitcoin?.usd;
     const eur = data["euro-coin"]?.usd;
@@ -66,10 +79,21 @@ export async function getPrices(): Promise<AllPrices> {
     if (typeof eur !== "number" || eur <= 0) {
       throw new Error("CoinGecko returned no EURC price");
     }
-    _cache = { at: now, cirbtc: btc, eurc: eur, source: "coingecko" };
+    const btcChange = Number(data.bitcoin?.usd_24h_change ?? 0);
+    const eurChange = Number(data["euro-coin"]?.usd_24h_change ?? 0);
+    _cache = {
+      at: now,
+      cirbtc: btc,
+      eurc: eur,
+      cirbtc_change_24h_pct: btcChange,
+      eurc_change_24h_pct: eurChange,
+      source: "coingecko",
+    };
     return {
       cirbtc: btc,
       eurc: eur,
+      cirbtc_change_24h_pct: btcChange,
+      eurc_change_24h_pct: eurChange,
       source: "coingecko",
       fetched_at: new Date(now).toISOString(),
     };
@@ -84,11 +108,15 @@ export async function getPrices(): Promise<AllPrices> {
       at: now - CACHE_TTL_MS / 2,
       cirbtc: fallbackCirbtc,
       eurc: fallbackEurc,
+      cirbtc_change_24h_pct: FALLBACK.cirbtc_change_24h_pct,
+      eurc_change_24h_pct: FALLBACK.eurc_change_24h_pct,
       source: "fallback",
     };
     return {
       cirbtc: fallbackCirbtc,
       eurc: fallbackEurc,
+      cirbtc_change_24h_pct: FALLBACK.cirbtc_change_24h_pct,
+      eurc_change_24h_pct: FALLBACK.eurc_change_24h_pct,
       source: "fallback",
       fetched_at: new Date(now).toISOString(),
     };
