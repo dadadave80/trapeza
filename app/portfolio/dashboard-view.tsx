@@ -567,26 +567,38 @@ export function DashboardView({
         ) : null}
 
         {/* ─── HISTORY ─────────────────────────────────────────── */}
-        {decisions.length > 1 ? (
+        {decisions.length > 0 ? (
           <section
             className="py-6 border-b border-dashed"
             style={{ borderColor: "var(--green-dim)" }}
           >
             <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
               <p className="section-marker">
-                [08] DECISION·LOG · LAST {decisions.length - 1}{" "}
-                {decisions.length - 1 === 1 ? "ENTRY" : "ENTRIES"}
+                [08] DECISION·LOG · LAST {decisions.length}{" "}
+                {decisions.length === 1 ? "ENTRY" : "ENTRIES"}
               </p>
               <span className="label">CLICK ANY ROW →</span>
             </div>
 
             <div className="space-y-1">
-              {decisions.slice(1).map((d) => (
+              {decisions.map((d, i) => (
                 <Link
                   key={d.id}
                   href={`/trace/${d.id}`}
-                  className="grid grid-cols-[auto_auto_1fr_auto] gap-x-5 items-baseline py-1.5 px-2 -mx-2 transition-colors hover:bg-[color:var(--bg-row-hover)]"
+                  className="grid grid-cols-[auto_auto_auto_1fr_auto] gap-x-4 items-baseline py-1.5 px-2 -mx-2 transition-colors hover:bg-[color:var(--bg-row-hover)]"
+                  aria-current={i === 0 ? "true" : undefined}
                 >
+                  <span
+                    className="text-[10px] tracking-[0.25em] uppercase tabular-nums whitespace-nowrap"
+                    style={{
+                      color:
+                        i === 0 ? "var(--amber)" : "var(--green-dim)",
+                      visibility: i === 0 ? "visible" : "hidden",
+                    }}
+                    aria-label={i === 0 ? "Latest decision" : undefined}
+                  >
+                    ▶
+                  </span>
                   <span
                     className="text-[11px] tabular-nums whitespace-nowrap"
                     style={{ color: "var(--green-dim)" }}
