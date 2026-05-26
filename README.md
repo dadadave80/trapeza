@@ -45,7 +45,7 @@ The cash sleeve doesn't sit at 0%. Idle USDC autosweeps into the USYC vault to e
 ```mermaid
 flowchart TB
     subgraph Browser["Browser"]
-        UI["Dashboard · brutalist UI"]
+        UI["Dashboard"]
     end
 
     subgraph Vercel["Vercel · Next.js 16 App Router"]
