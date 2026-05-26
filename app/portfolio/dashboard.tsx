@@ -48,8 +48,11 @@ export function Dashboard({ address, goal, email, lastCheckedAt }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [minting, setMinting] = useState<"usdc" | "eurc" | "cirbtc" | null>(null);
 
-  // Idle counter: increments each time a poll returns identical balances.
-  // Used to dial back polling cadence when nothing's changing.
+  // Idle counter: increments each time a poll returns identical balances +
+  // identical latest-decision id. Used to dial back polling cadence when
+  // nothing's changing. The decision id is read from the live API response
+  // (not from closure state) so the comparison is always against the value
+  // we just received, not the stale initial render.
   const idleCountRef = useRef(0);
   const lastSnapshotRef = useRef<string>("");
 
@@ -68,15 +71,18 @@ export function Dashboard({ address, goal, email, lastCheckedAt }: Props) {
         setBalances(pj.balances);
         if (pj.lastCheckedAt) setLastChecked(pj.lastCheckedAt);
 
+        let latestId = "";
         if (t.ok) {
           const tj = (await t.json()) as TraceResponse;
           setDecisions(tj.decisions ?? []);
           setHasMore(tj.hasMore ?? false);
           setPage(1);
+          latestId = tj.decisions?.[0]?.id ?? "";
         }
 
-        // Idle detection — same balance total + same decision count = idle.
-        const snapshot = `${pj.balances.total.toFixed(6)}|${decisions[0]?.id ?? ""}`;
+        // Idle detection — same balance total + same latest-decision id = idle.
+        // Read latestId from the just-received response, not closure state.
+        const snapshot = `${pj.balances.total.toFixed(6)}|${latestId}`;
         if (snapshot === lastSnapshotRef.current) {
           idleCountRef.current += 1;
         } else {
@@ -93,9 +99,6 @@ export function Dashboard({ address, goal, email, lastCheckedAt }: Props) {
         setRefreshing(false);
       }
     },
-    // Intentionally only re-create when address changes — decisions[0]?.id is
-    // read inside via the closure but doesn't need to drive a re-subscribe.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [address],
   );
 
