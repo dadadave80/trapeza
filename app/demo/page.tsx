@@ -10,6 +10,8 @@ export const metadata = {
 };
 
 export default function DemoPage() {
+  // Fake a healthy +0.94% / +$138.41 24h move so the demo pill is colored.
+  const total_24h_ago = MOCK.portfolio.totalUsd - 138.41;
   const balances: TokenBalances = {
     usdc: MOCK.positions[0].amount,
     usyc: MOCK.positions[1].amount,
@@ -29,6 +31,10 @@ export default function DemoPage() {
       cirbtc: MOCK.positions[3].usd,
     },
     total: MOCK.portfolio.totalUsd,
+    total_24h_ago,
+    delta_24h_usd: MOCK.portfolio.totalUsd - total_24h_ago,
+    delta_24h_pct:
+      ((MOCK.portfolio.totalUsd - total_24h_ago) / total_24h_ago) * 100,
     price_source: MOCK.prices.source,
     fetched_at: MOCK.portfolio.fetchedAt,
   };

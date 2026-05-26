@@ -16,6 +16,7 @@ function balances(
     cirbtc: cirbtc * prices.cirbtc,
     usyc: usyc * prices.usyc,
   };
+  const total = totals_usd.usdc + totals_usd.eurc + totals_usd.cirbtc + totals_usd.usyc;
   return {
     usdc,
     eurc,
@@ -24,7 +25,11 @@ function balances(
     usyc_assets_usdc: usyc * prices.usyc,
     prices,
     totals_usd,
-    total: totals_usd.usdc + totals_usd.eurc + totals_usd.cirbtc + totals_usd.usyc,
+    total,
+    // No P&L in the planner tests — flat values keep planRebalance math clean.
+    total_24h_ago: total,
+    delta_24h_usd: 0,
+    delta_24h_pct: 0,
     price_source: "coingecko",
     fetched_at: "2026-05-24T00:00:00.000Z",
   };
